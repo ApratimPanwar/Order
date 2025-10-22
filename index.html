@@ -497,16 +497,23 @@
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Groups elements by shape type and clusters each using centroid positioning.</p>
+                            <h4>What it does</h4>
+                            <p>Separates all circles, squares, rectangles, and triangles into their own groups and arranges each group in a circular cluster.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">groups[type].forEach((elem, i) => {
-  angle = i * (2π / count);
-  elem.x = centerX + cos(angle) * 50;
-  elem.y = centerY + sin(angle) * 50;
-});</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Sort by shape type
+circles = filter(type == 'circle')
+squares = filter(type == 'square')
+
+// 2. Place each group in a corner
+// 3. Arrange group members in a circle
+angle = i * (360° / groupSize)
+x = centerX + cos(angle) * radius</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates clear visual categories. Similar shapes together = easier to understand and scan the composition.</p>
                         </div>
                     </div>
                 </button>
@@ -521,14 +528,26 @@
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Normalizes all elements to average size, snapped to 8px grid.</p>
+                            <h4>What it does</h4>
+                            <p>Makes all elements the same size by calculating the average and applying it to everyone.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">avgSize = sum(sizes) / count;
-gridSize = round(avgSize / 8) * 8;
-elements.forEach(e => e.size = gridSize);</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Add up all sizes
+total = size1 + size2 + size3...
+
+// 2. Divide by count to get average
+avgSize = total / elementCount
+
+// 3. Round to nearest 8px grid
+finalSize = round(avgSize / 8) * 8
+
+// 4. Apply to all elements
+everyone.size = finalSize</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Equal sizing creates visual rhythm and reduces noise. Other properties (position, color, shape) can now communicate hierarchy instead.</p>
                         </div>
                     </div>
                 </button>
@@ -543,14 +562,26 @@ elements.forEach(e => e.size = gridSize);</div>
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Enforces 8px modular grid for all positions and sizes.</p>
+                            <h4>What it does</h4>
+                            <p>Snaps everything to an invisible 8-pixel grid. Positions, sizes, and rotations all become multiples of specific values.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">elem.x = round(elem.x / 8) * 8;
-elem.y = round(elem.y / 8) * 8;
-elem.rotation = round(elem.rotation / 15) * 15;</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// Round position to nearest 8px
+x = round(x / 8) * 8
+y = round(y / 8) * 8
+
+// Round size to nearest 8px
+size = round(size / 8) * 8
+
+// Round rotation to nearest 15°
+rotation = round(rotation / 15) * 15
+
+// Keep within canvas bounds</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates mathematical precision and structural integrity. Everything aligns to invisible guidelines, producing harmonious spacing.</p>
                         </div>
                     </div>
                 </button>
@@ -565,15 +596,29 @@ elem.rotation = round(elem.rotation / 15) * 15;</div>
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Applies golden ratio (φ = 1.618) sizing based on visual weight.</p>
+                            <h4>What it does</h4>
+                            <p>Ranks elements by "visual weight" (how much attention they grab) and resizes them using the golden ratio. Most important = largest and centered.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">weight = size*0.4 + contrast*0.3 + position*0.2;
-sorted.forEach((e, rank) => {
-  e.size = 150 / pow(φ, rank * 0.6);
-});</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Calculate visual weight
+weight = size(40%) + contrast(30%) 
+       + centerDistance(20%) + color(10%)
+
+// 2. Rank from highest to lowest
+
+// 3. Apply golden ratio sizing
+size = 120 / (1.618 ^ rank)
+// rank 0: 120px
+// rank 1: 74px  
+// rank 2: 46px...
+
+// 4. Position: center for #1, 
+//    circle around it for others</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates clear importance levels. Eye naturally goes to largest/central element first, then follows the size progression.</p>
                         </div>
                     </div>
                 </button>
@@ -588,16 +633,29 @@ sorted.forEach((e, rank) => {
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Equal intervals with alternating size pattern (large-small).</p>
+                            <h4>What it does</h4>
+                            <p>Lines up all elements horizontally with equal spacing between them. Alternates size: large-small-large-small pattern.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">spacing = canvasWidth / (count + 1);
-elements.forEach((e, i) => {
-  e.x = spacing * (i + 1);
-  e.size = i % 2 === 0 ? 80 : 60;
-});</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Calculate equal spacing
+spacing = canvasWidth / (count + 1)
+
+// 2. Position horizontally
+element[0].x = spacing * 1
+element[1].x = spacing * 2
+element[2].x = spacing * 3...
+
+// 3. Center vertically
+everyone.y = canvasHeight / 2
+
+// 4. Alternate sizes
+if (position is even): size = 70px
+if (position is odd):  size = 50px</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates predictable beats like music. The alternating pattern guides your eye smoothly left to right across the canvas.</p>
                         </div>
                     </div>
                 </button>
@@ -612,16 +670,26 @@ elements.forEach((e, i) => {
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Iterative attraction toward nearest neighbors.</p>
+                            <h4>What it does</h4>
+                            <p>Moves elements closer to their nearest neighbors in 10 steps, like magnets attracting. Creates tight groups without overlapping.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">for (pass = 0; pass < 10; pass++) {
-  nearest = findNearest(e);
-  e.x += (nearest.x - e.x) * 0.3;
-  e.y += (nearest.y - e.y) * 0.3;
-}</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// Repeat 10 times:
+for (pass 1 to 10):
+  
+  // For each element:
+  1. Find closest neighbor
+  2. Calculate distance to them
+  3. Move 30% closer
+  
+  // But prevent overlap:
+  minDistance = (size1 + size2)/2 + 10px
+  if (tooClose): stop moving</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Gestalt principle: nearby objects feel related. Creates visual groups that the brain automatically perceives as belonging together.</p>
                         </div>
                     </div>
                 </button>
@@ -636,14 +704,28 @@ elements.forEach((e, i) => {
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Perceptual center using gamma correction (γ=2.2).</p>
+                            <h4>What it does</h4>
+                            <p>Calculates where the "visual center of mass" is and shifts everything to balance it in the actual center. Like balancing a tray.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">L = pow(0.2126*R + 0.7152*G + 0.0722*B, 1/2.2);
-centerX = sum(x * weight) / sum(weight);
-offset = canvasCenter - centerX;</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Calculate each element's weight
+//    (lighter colors = lighter weight)
+brightness = 0.21*R + 0.72*G + 0.07*B
+weight = size * brightness
+
+// 2. Find weighted center
+centerX = sum(x * weight) / sum(weight)
+centerY = sum(y * weight) / sum(weight)
+
+// 3. Calculate shift needed
+offset = canvasCenter - actualCenter
+
+// 4. Move everyone by that offset</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates perceptual equilibrium. Dark/large elements feel "heavier" - this algorithm accounts for that so the composition doesn't feel lopsided.</p>
                         </div>
                     </div>
                 </button>
@@ -658,15 +740,28 @@ offset = canvasCenter - centerX;</div>
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Aligns all elements to average rotation angle.</p>
+                            <h4>What it does</h4>
+                            <p>Calculates the average angle of all elements and rotates everyone to match it. Creates unified directional flow.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">avgRotation = atan2(
-  mean(sin(rotations)),
-  mean(cos(rotations))
-);</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// Can't just average angles!
+// 350° + 10° = 360° ≠ 180° (wrong!)
+
+// Use circular mean instead:
+// 1. Convert angles to vectors
+xComponent = sum(cos(angle))
+yComponent = sum(sin(angle))
+
+// 2. Find average vector direction
+avgAngle = atan2(yComponent, xComponent)
+
+// 3. Apply to everyone
+everyone.rotation = avgAngle</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Directional unity reduces visual tension. All elements "point" the same way, suggesting unified purpose and creating smooth flow.</p>
                         </div>
                     </div>
                 </button>
@@ -681,23 +776,29 @@ offset = canvasCenter - centerX;</div>
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Finds the most common facing direction and rotates all elements to face that direction. Each element has a visual indicator showing which way it "faces".</p>
+                            <h4>What it does</h4>
+                            <p>Finds the most popular facing direction (not average!) and rotates everyone to face that way. Like majority vote instead of compromise.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">// Quantize to 8 cardinal directions
-directions = elements.map(e => 
-  round(e.rotation / 45) * 45
-);
-mostCommon = mode(directions);
-elements.forEach(e => {
-  e.rotation = mostCommon;
-});</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Round to 8 cardinal directions
+//    0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°
+rounded = round(angle / 45) * 45
+
+// 2. Count how many point each way
+0°:   ||||| (5 elements)
+45°:  || (2 elements)  
+90°:  |||| (4 elements)
+...
+
+// 3. Find the winner (mode)
+mostCommon = 0° (has 5 votes)
+
+// 4. Everyone faces that direction</div>
                         </div>
                         <div class="detail-section">
-                            <h4>Design Decision</h4>
-                            <p>Unified facing creates strong directional flow. When all elements point the same way, it creates dynamic movement and visual momentum in the composition.</p>
+                            <h4>Design Impact</h4>
+                            <p>Stronger directional unity than averaging. Creates powerful visual momentum - the composition "moves" in one direction.</p>
                         </div>
                     </div>
                 </button>
@@ -712,14 +813,31 @@ elements.forEach(e => {
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Mirror pairs across vertical center axis.</p>
+                            <h4>What it does</h4>
+                            <p>Creates perfect mirror pairs across a vertical center line. Left side is exact reflection of right side.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">offset = abs(elem[i].x - centerX);
-elem[i].x = centerX - offset;
-elem[i+1].x = centerX + offset;</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">centerX = canvasWidth / 2
+
+// Pair up elements
+for (i = 0, 2, 4, 6...):
+  elem1 = elements[i]
+  elem2 = elements[i+1]
+  
+  // Mirror positions
+  distance = |elem1.x - centerX|
+  elem1.x = centerX - distance
+  elem2.x = centerX + distance
+  
+  // Match properties
+  elem2.y = elem1.y
+  elem2.size = elem1.size
+  elem2.rotation = elem1.rotation</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Symmetry = instant order. The brain recognizes and loves symmetry - it feels stable, formal, and professionally balanced.</p>
                         </div>
                     </div>
                 </button>
@@ -734,14 +852,29 @@ elem[i+1].x = centerX + offset;</div>
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Analogous or complementary color theory application.</p>
+                            <h4>What it does</h4>
+                            <p>Analyzes existing colors and applies color theory: complementary colors (opposites) for few elements, analogous colors (neighbors) for many.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">avgHue = mean(extractHues(colors));
-hue = i % 2 === 0 ? avgHue : avgHue + 180;
-color = hsl(hue, 70%, 45 + i*5);</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Find average hue (color angle)
+avgHue = mean(allColors)
+
+// 2. Apply color relationship
+if (4 or fewer elements):
+  // Complementary (opposite colors)
+  even: hue = avgHue
+  odd:  hue = avgHue + 180°
+else:
+  // Analogous (adjacent colors)
+  spread colors ±30° around avgHue
+
+// 3. Vary lightness for depth
+lightness = 45% + (position * 5%)</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Color relationships create emotional cohesion. Harmonious palettes feel intentional and professional instead of random.</p>
                         </div>
                     </div>
                 </button>
@@ -756,14 +889,28 @@ color = hsl(hue, 70%, 45 + i*5);</div>
                     </div>
                     <div class="mode-details">
                         <div class="detail-section">
-                            <h4>Algorithm</h4>
-                            <p>Even distribution around circle with equal angles.</p>
+                            <h4>What it does</h4>
+                            <p>Arranges all elements in a perfect circle around the canvas center, evenly spaced like numbers on a clock.</p>
                         </div>
                         <div class="detail-section">
-                            <h4>Code Logic</h4>
-                            <div class="code-snippet">angle = (i / count) * 2 * PI;
-e.x = centerX + cos(angle) * 180;
-e.y = centerY + sin(angle) * 180;</div>
+                            <h4>How it works</h4>
+                            <div class="code-snippet">center = {x: 250, y: 250}
+radius = 150px
+
+// Calculate angle for each element
+for (i = 0 to elementCount):
+  angle = (i / elementCount) * 360°
+  
+  // Convert angle to position
+  x = centerX + cos(angle) * radius
+  y = centerY + sin(angle) * radius
+  
+  // Rotate to point outward
+  rotation = angle + 90°</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates strong focal emphasis on the center. All elements point toward or radiate from one spot, creating unified circular flow.</p>
                         </div>
                     </div>
                 </button>
