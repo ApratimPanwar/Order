@@ -33,15 +33,193 @@
             flex-shrink: 0;
         }
 
-        .header h1 {
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-text h1 {
             font-size: 1.4em;
             margin-bottom: 2px;
             font-weight: 700;
         }
 
-        .header .subtitle {
+        .header-text .subtitle {
             font-size: 0.8em;
             opacity: 0.8;
+        }
+
+        .help-btn {
+            background: #F59E0B;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .help-btn:hover {
+            background: #D97706;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Instructions Modal */
+        .instructions-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .instructions-overlay.active {
+            display: flex;
+        }
+
+        .instructions-panel {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .instructions-header {
+            background: #1F2937;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .instructions-header h2 {
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: #EF4444;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: #DC2626;
+            transform: rotate(90deg);
+        }
+
+        .instructions-content {
+            padding: 30px;
+        }
+
+        .instruction-section {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .instruction-section:last-child {
+            border-bottom: none;
+        }
+
+        .instruction-section h3 {
+            color: #1F2937;
+            font-size: 1.3em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instruction-section h4 {
+            color: #374151;
+            font-size: 1.1em;
+            margin: 20px 0 10px 0;
+        }
+
+        .instruction-section p {
+            color: #4B5563;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .instruction-section ul {
+            color: #4B5563;
+            line-height: 1.7;
+            margin-left: 25px;
+            margin-bottom: 12px;
+        }
+
+        .instruction-section li {
+            margin-bottom: 8px;
+        }
+
+        .instruction-section strong {
+            color: #1F2937;
+        }
+
+        .panel-demo {
+            background: #F9FAFB;
+            border-left: 4px solid #3B82F6;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .constraint-box {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .limitation-box {
+            background: #FEE2E2;
+            border-left: 4px solid #EF4444;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .tip-box {
+            background: #D1FAE5;
+            border-left: 4px solid #10B981;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
         }
 
         .main-workspace {
@@ -470,8 +648,211 @@
     <div class="app-container">
         <!-- TOP: Header -->
         <div class="header">
-            <h1>🎨 Order Composer: Interactive Design Analysis Tool</h1>
-            <p class="subtitle">A computational approach to understanding and applying principles of visual order</p>
+            <div class="header-content">
+                <div class="header-text">
+                    <h1>🎨 Order Composer: Interactive Design Analysis Tool</h1>
+                    <p class="subtitle">A computational approach to understanding and applying principles of visual order</p>
+                </div>
+                <button class="help-btn" onclick="toggleInstructions()">
+                    <span>❓</span>
+                    <span>Instructions</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Instructions Overlay -->
+        <div class="instructions-overlay" id="instructionsOverlay" onclick="closeInstructionsOnOverlay(event)">
+            <div class="instructions-panel" onclick="event.stopPropagation()">
+                <div class="instructions-header">
+                    <h2>📖 How to Use Order Composer</h2>
+                    <button class="close-btn" onclick="toggleInstructions()">×</button>
+                </div>
+                <div class="instructions-content">
+                    
+                    <div class="instruction-section">
+                        <h3>🎯 What is Order Composer?</h3>
+                        <p>Order Composer is an interactive tool that demonstrates how computational algorithms can analyze and create visual order in design compositions. It combines manual control with algorithmic transformations to teach design principles through experimentation.</p>
+                        <div class="tip-box">
+                            <strong>💡 Purpose:</strong> This tool bridges the gap between intuitive design and computational design theory, making abstract principles tangible and measurable.
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>🚀 Getting Started</h3>
+                        <h4>Basic Workflow:</h4>
+                        <ul>
+                            <li><strong>Step 1:</strong> Click <strong>"🎲 Generate New"</strong> to create a random composition with 16 geometric elements</li>
+                            <li><strong>Step 2:</strong> View the automatic <strong>Order Analysis</strong> scores (0-100%) below the canvas</li>
+                            <li><strong>Step 3:</strong> Apply <strong>Algorithmic Modes</strong> (left panel) to transform the composition</li>
+                            <li><strong>Step 4:</strong> Fine-tune with <strong>Manual Controls</strong> (right panel) for individual elements</li>
+                            <li><strong>Step 5:</strong> Observe how order scores change in real-time as you modify the design</li>
+                        </ul>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>◀️ Left Panel: Algorithmic Order Modes</h3>
+                        <div class="panel-demo">
+                            <strong>Purpose:</strong> Apply computational design principles with one click
+                        </div>
+                        <p>This panel contains 11 algorithmic transformations, each implementing a specific design principle:</p>
+                        <ul>
+                            <li><strong>Click any mode button</strong> to apply its algorithm to visible elements</li>
+                            <li><strong>Click the ⓘ icon</strong> to expand detailed explanations of how each algorithm works</li>
+                            <li><strong>Active mode</strong> is highlighted with dark background</li>
+                            <li>Modes include: Shape Grouping, Size Uniformity, Grid Alignment, Visual Hierarchy, Rhythmic Spacing, Proximity Clustering, Balance, Rotation Alignment, Face Direction, Symmetry, Color Harmony, and Radial Distribution</li>
+                        </ul>
+                        <div class="tip-box">
+                            <strong>💡 Tip:</strong> Try applying different modes sequentially to see how they combine. Each mode modifies the current state, not the original.
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>▶️ Center Panel: Canvas & Analysis</h3>
+                        <div class="panel-demo">
+                            <strong>Purpose:</strong> Visualize composition and view quantitative order metrics
+                        </div>
+                        
+                        <h4>Canvas (500×500px)</h4>
+                        <p>Displays your composition with all visible elements. A subtle 8px grid helps visualize alignment.</p>
+                        
+                        <h4>Action Buttons</h4>
+                        <ul>
+                            <li><strong>🎲 Generate New:</strong> Creates a new random composition with 6-10 visible elements (out of 16 total)</li>
+                            <li><strong>🔄 Reset Original:</strong> Reverts to the last generated composition, undoing all modifications</li>
+                        </ul>
+                        
+                        <h4>Order Analysis Dashboard</h4>
+                        <p>Real-time scoring system (0-100%) that evaluates six design principles:</p>
+                        <ul>
+                            <li><strong>Hierarchy (20%):</strong> Clear size/importance differences</li>
+                            <li><strong>Grouping (18%):</strong> Consistent spacing relationships</li>
+                            <li><strong>Structure (16%):</strong> Grid alignment and systematic organization</li>
+                            <li><strong>Flow (15%):</strong> Logical progression from important to less important</li>
+                            <li><strong>Spatial (12%):</strong> White space balance and visual weight distribution</li>
+                            <li><strong>Harmony (19%):</strong> Consistency in size, rotation, and fill properties</li>
+                        </ul>
+                        <p><strong>Overall Score</strong> is a weighted average of all six principles.</p>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>▶️ Right Panel: Manual Element Controls</h3>
+                        <div class="panel-demo">
+                            <strong>Purpose:</strong> Fine-tune individual element properties
+                        </div>
+                        <p>Contains all 16 elements organized by shape type (Circles, Squares, Rectangles, Triangles).</p>
+                        
+                        <h4>For Each Element:</h4>
+                        <ul>
+                            <li><strong>Show/Hide Button:</strong> Toggle element visibility</li>
+                            <li><strong>X Position Slider:</strong> Horizontal position (0-500px)</li>
+                            <li><strong>Y Position Slider:</strong> Vertical position (0-500px)</li>
+                            <li><strong>Size Slider:</strong> Element dimensions (20-200px)</li>
+                            <li><strong>Rotation Slider:</strong> Angle (0-360°) - shows directional arrows temporarily when adjusted</li>
+                            <li><strong>Color Picker:</strong> Change element color (affects visual weight and harmony scores)</li>
+                        </ul>
+                        
+                        <div class="tip-box">
+                            <strong>💡 Pro Tip:</strong> Hidden elements don't affect order scores. Use Show/Hide to experiment with different element counts.
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>⚠️ Composition Generator Constraints</h3>
+                        <div class="constraint-box">
+                            <h4>Fixed Element Set</h4>
+                            <p><strong>Constraint:</strong> Exactly 16 elements total (4 of each shape type)</p>
+                            <p><strong>Rationale:</strong> Fixed set allows consistent scoring and comparison across compositions. More elements would create visual chaos and make algorithmic transformations less meaningful.</p>
+                        </div>
+                        
+                        <div class="constraint-box">
+                            <h4>Random Generation Parameters</h4>
+                            <p><strong>Visibility:</strong> 60% chance per element (typically 6-10 visible elements)</p>
+                            <p><strong>Position:</strong> Random within inner 400×400px area (50px margin from edges)</p>
+                            <p><strong>Size:</strong> Random between 40-120px</p>
+                            <p><strong>Rotation:</strong> Random 0-360°</p>
+                            <p><strong>Color:</strong> Selected from 8-color palette (grays + warm accent colors)</p>
+                            <p><strong>Fill:</strong> 80% chance of filled, 20% outlined only</p>
+                            <p><strong>Rationale:</strong> These constraints ensure generated compositions have enough variety to be interesting but aren't so chaotic that order principles can't be applied effectively.</p>
+                        </div>
+
+                        <div class="constraint-box">
+                            <h4>Canvas Boundaries</h4>
+                            <p><strong>Constraint:</strong> 500×500px fixed canvas size with 8px baseline grid</p>
+                            <p><strong>Rationale:</strong> Fixed dimensions allow consistent spatial relationships and scoring metrics. The 8px grid follows modern UI design standards.</p>
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>⚙️ Known Limitations & Design Decisions</h3>
+                        
+                        <div class="limitation-box">
+                            <h4>1. Algorithmic Mode Interactions</h4>
+                            <p><strong>Issue:</strong> Applying multiple algorithmic modes sequentially can produce unexpected results</p>
+                            <p><strong>Why:</strong> Each mode modifies the current state, not the original. Some combinations conflict (e.g., Grid Alignment after Radial Distribution removes the circular pattern).</p>
+                            <p><strong>Workaround:</strong> Use "Reset Original" to start fresh before applying a different mode, or understand that modes build upon each other.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>2. Order Scoring Subjectivity</h4>
+                            <p><strong>Issue:</strong> High scores don't always mean "beautiful" - they mean "orderly"</p>
+                            <p><strong>Why:</strong> Order is quantifiable; beauty is subjective. A perfectly gridded composition scores high but may feel rigid or boring.</p>
+                            <p><strong>Insight:</strong> This tool measures mathematical order, not aesthetic quality. Great design often balances order with controlled chaos.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>3. Limited Element Diversity</h4>
+                            <p><strong>Issue:</strong> Only 4 basic shapes available (circle, square, rectangle, triangle)</p>
+                            <p><strong>Why:</strong> Simplicity allows focus on spatial relationships rather than complex form. Additional shapes would complicate algorithmic transformations.</p>
+                            <p><strong>Design Decision:</strong> Intentionally minimal to teach fundamental principles before adding complexity.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>4. No Undo/Redo System</h4>
+                            <p><strong>Issue:</strong> Can't step backward through changes except by resetting to original</p>
+                            <p><strong>Why:</strong> Implementing history would add significant complexity to the codebase for an educational tool.</p>
+                            <p><strong>Workaround:</strong> Make note of successful configurations or generate new compositions frequently.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>5. Performance with Many Visible Elements</h4>
+                            <p><strong>Issue:</strong> Some algorithms (like Proximity Clustering) can be slow with all 16 elements visible</p>
+                            <p><strong>Why:</strong> Iterative algorithms with O(n²) complexity. Intentional to show computational cost of design decisions.</p>
+                            <p><strong>Insight:</strong> Real-world design tools face similar trade-offs between algorithm sophistication and performance.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>6. Directional Arrows Temporary Display</h4>
+                            <p><strong>Design Decision:</strong> Face direction arrows only appear for 3 seconds when rotation changes</p>
+                            <p><strong>Why:</strong> Keeps canvas clean while providing feedback when needed. Arrows add visual clutter if always visible.</p>
+                            <p><strong>Trigger:</strong> Adjusting rotation slider or clicking Rotation Alignment / Face Direction modes.</p>
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>🎓 Educational Context</h3>
+                        <p>This tool was developed as part of the <strong>Elements of Design</strong> course at the Indian Institute of Science (IISc), Bangalore. It demonstrates how:</p>
+                        <ul>
+                            <li>Abstract design principles can be quantified and measured</li>
+                            <li>Computational thinking applies to creative disciplines</li>
+                            <li>Algorithms can both analyze existing designs and generate new ones</li>
+                            <li>Mathematical concepts (golden ratio, gamma correction, circular mean) underpin visual harmony</li>
+                            <li>Design "rules" are really perceptual patterns that can be codified</li>
+                        </ul>
+                        <p><strong>Learning Objective:</strong> Understand that good design isn't magic - it follows measurable principles that can be learned, applied systematically, and even automated.</p>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>📚 Further Exploration</h3>
+                        <div class="tip-box">
+                            <p><strong>Experiment:</strong> Try to manually create a composition that scores 90%+ without using algorithmic modes. It's harder than it looks!</p>
+                            <p><strong>Compare:</strong> Generate two compositions and apply the same algorithmic mode to both. Notice how the same algorithm produces different results based on initial conditions.</p>
+                            <p><strong>Reverse Engineer:</strong> Find a high-scoring generated composition and try to identify which design principles it exemplifies.</p>
+                            <p><strong>Challenge:</strong> Create the most visually interesting composition you can with the lowest possible order score. This demonstrates the tension between order and visual interest.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
 
         <!-- MIDDLE: Three-Panel Workspace -->
@@ -1179,6 +1560,17 @@ for (i = 0 to elementCount):
             
             generateNewComposition();
             buildElementControls();
+        }
+
+        function toggleInstructions() {
+            const overlay = document.getElementById('instructionsOverlay');
+            overlay.classList.toggle('active');
+        }
+
+        function closeInstructionsOnOverlay(event) {
+            if (event.target.id === 'instructionsOverlay') {
+                toggleInstructions();
+            }
         }
 
         function toggleModeDetails(button, mode) {
