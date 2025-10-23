@@ -55,12 +55,12 @@ Order Analysis Dashboard
 
 Real-time scoring system (0-100%) that evaluates six design principles:
 
-    Hierarchy (20%): Clear size/importance differences
-    Grouping (18%): Consistent spacing relationships
-    Structure (16%): Grid alignment and systematic organization
-    Flow (15%): Logical progression from important to less important
-    Spatial (12%): White space balance and visual weight distribution
-    Harmony (19%): Consistency in size, rotation, and fill properties
+    Hierarchy : Clear size/importance differences
+    Grouping : Consistent spacing relationships
+    Structure : Grid alignment and systematic organization
+    Flow : Logical progression from important to less important
+    Spatial : White space balance and visual weight distribution
+    Harmony : Consistency in size, rotation, and fill properties
 
 Overall Score is a weighted average of all six principles.
 ▶️ Right Panel: Manual Element Controls
