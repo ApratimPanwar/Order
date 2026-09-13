@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-09-13T13:06:55.970Z",
+  "provenance": {
+    "modelVersion": "v0-as-shipped",
+    "configVersion": "v0-config-1",
+    "preset": "strict-grid",
+    "presetImplementationVersion": "preset-impl-1",
+    "pairSeeds": [
+      1,
+      2000
+    ],
+    "baselineSeedPattern": "baseline-<seed>"
+  },
+  "definition": "A reversal is a matched pair in which the random-position twin scores >= the grid-structured original under v0.",
+  "notEvidenceOf": "Human perceptual disagreement. No human has judged these layouts. See the header of this script for the three open readings.",
+  "counts": {
+    "pairs": 2000,
+    "reversals": 174,
+    "proportion": 0.087
+  },
+  "meanWeightedDelta": {
+    "allPairs": {
+      "hierarchy": -1.6379,
+      "grouping": -0.0149,
+      "structure": 6.3987,
+      "flow": 0.0685,
+      "spatial": 0.355,
+      "harmony": 0
+    },
+    "reversalsOnly": {
+      "hierarchy": -5.2991,
+      "grouping": -1.4971,
+      "structure": 5.9753,
+      "flow": -0.922,
+      "spatial": 0.255,
+      "harmony": 0
+    }
+  },
+  "reversalDriverCounts": {
+    "hierarchy": 160,
+    "grouping": 12,
+    "flow": 2
+  },
+  "limitations": [
+    "CONFOUND IN THIS BASELINE: randomizePositions draws x,y uniformly over the FULL canvas [0,500], while strict-grid clamps each element to size/2 + gridSize from the edges. The two conditions therefore differ in the SUPPORT of their position distributions, not only in arrangement. Since v0 hierarchy includes positionFactor = 1 - dist(centre)/maxDist and analyzeHierarchy rewards the RANGE and VARIANCE of visual weights, the random twin can reach more extreme centre-distances and so obtain a wider weight spread. Part of the hierarchy gap is attributable to this, not to arrangement quality. A corrected baseline should sample positions from the same reachable region the preset clamps to.",
+    "Single preset (strict-grid). Other presets may reverse for different reasons.",
+    "Harmony is identically 0 across every pair because strict-grid and position randomisation both leave size, rotation and fill untouched, and v0 harmony reads only those. Harmony is structurally blind to position.",
+    "No human has rated these layouts. Nothing here speaks to perceptual validity."
+  ],
+  "deltaRange": {
+    "min": -9.9172,
+    "max": -0.0131
+  }
+}

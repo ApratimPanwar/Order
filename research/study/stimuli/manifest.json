@@ -1,0 +1,86 @@
+{
+  "manifestVersion": "stimuli-1",
+  "builtAt": "2026-09-13T13:59:38.702Z",
+  "note": "Participant bundle. Geometry and integrity hashes only - no scores, conditions or methods.",
+  "count": 13,
+  "items": [
+    {
+      "stimulusId": "stim-ef4d96d3",
+      "file": "stimuli/stim-ef4d96d3.json",
+      "integrity": "53aad81d",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-c23cf687",
+      "file": "stimuli/stim-c23cf687.json",
+      "integrity": "49f99bf6",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-48998d03",
+      "file": "stimuli/stim-48998d03.json",
+      "integrity": "71787d03",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-a76a3f7c",
+      "file": "stimuli/stim-a76a3f7c.json",
+      "integrity": "e5ea9a3b",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-aa8f352e",
+      "file": "stimuli/stim-aa8f352e.json",
+      "integrity": "7bd4e8d0",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-3a337ad1",
+      "file": "stimuli/stim-3a337ad1.json",
+      "integrity": "eee6e44f",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-e776a13f",
+      "file": "stimuli/stim-e776a13f.json",
+      "integrity": "55857cdc",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-f682f0c0",
+      "file": "stimuli/stim-f682f0c0.json",
+      "integrity": "dd7b984c",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-a8016a0c",
+      "file": "stimuli/stim-a8016a0c.json",
+      "integrity": "6b47554b",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-5258dd88",
+      "file": "stimuli/stim-5258dd88.json",
+      "integrity": "96c603e1",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-290942aa",
+      "file": "stimuli/stim-290942aa.json",
+      "integrity": "3d51002f",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-58174ad3",
+      "file": "stimuli/stim-58174ad3.json",
+      "integrity": "2e5403e3",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-eb51b057",
+      "file": "stimuli/stim-eb51b057.json",
+      "integrity": "5aacd1ad",
+      "rendererVersion": "renderer-2"
+    }
+  ]
+}

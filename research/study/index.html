@@ -1,0 +1,300 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Composition rating — development pilot</title>
+<style>
+  :root { --fg:#1f2937; --muted:#6b7280; --line:#d1d5db; --accent:#1d4ed8; --warn:#b45309; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.55 system-ui, -apple-system, Segoe UI, sans-serif; color: var(--fg);
+         margin: 0; padding: 24px; max-width: 760px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .status { background:#fffbeb; border:1px solid #fcd34d; color:var(--warn);
+            padding:8px 12px; border-radius:6px; font-size:13px; margin-bottom:16px; }
+  .panel { border:1px solid var(--line); border-radius:8px; padding:18px; margin-bottom:16px; }
+  button { font: inherit; padding:8px 16px; border:1px solid var(--line); border-radius:6px;
+           background:#fff; cursor:pointer; }
+  button.primary { background: var(--accent); color:#fff; border-color: var(--accent); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  canvas { border:1px solid var(--line); border-radius:4px; display:block; margin:0 auto;
+           max-width:100%; height:auto; background:#fff; }
+  .scale { display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 2px; }
+  .scale button { min-width:44px; }
+  .scale button[aria-pressed="true"] { background: var(--accent); color:#fff; border-color:var(--accent); }
+  .ends { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
+  label { display:block; font-weight:600; margin-top:16px; }
+  textarea { width:100%; min-height:64px; font: inherit; padding:8px;
+             border:1px solid var(--line); border-radius:6px; }
+  .muted { color: var(--muted); font-size:13px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:18px; }
+  .prog { font-variant-numeric: tabular-nums; color:var(--muted); font-size:13px; }
+  .err { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b;
+         padding:8px 12px; border-radius:6px; font-size:13px; margin-bottom:12px; }
+  ul { padding-left: 20px; }
+</style>
+
+<div class="status" id="releaseStatus">Loading…</div>
+<div id="errors"></div>
+
+<!-- ACKNOWLEDGEMENT ------------------------------------------------------- -->
+<section id="ackPanel" class="panel" hidden>
+  <h1>Before you start</h1>
+  <p class="muted" id="ackVersions"></p>
+  <p>You will be shown a series of abstract compositions made of simple shapes. For
+     each one you will be asked two questions and given space to explain your
+     answer in your own words.</p>
+  <p>There are no right or wrong answers. The compositions were produced in
+     several different ways, and we are not told which is which while rating.</p>
+  <ul>
+    <li>Nothing identifying is collected — no name, no email, no contact details.
+        Your session is labelled with a random code.</li>
+    <li>Your answers are stored <strong>only in this browser</strong> until you
+        choose to download them. Nothing is sent anywhere.</li>
+    <li>You can stop at any time, and you can erase everything you have entered.</li>
+    <li>This is a <strong>development test of the software</strong>, not a research
+        study. Responses collected here are for checking that the tool works.</li>
+  </ul>
+  <div class="row">
+    <button class="primary" id="ackBtn">I understand — continue</button>
+    <button id="ackDecline">No thanks</button>
+  </div>
+</section>
+
+<!-- TRIAL ----------------------------------------------------------------- -->
+<section id="trialPanel" class="panel" hidden>
+  <div class="prog" id="progress"></div>
+  <canvas id="stimulus" width="500" height="500" aria-label="Abstract composition of geometric shapes"></canvas>
+
+  <label id="q1label">How ordered does this composition appear?</label>
+  <div class="scale" id="orderScale" role="group" aria-labelledby="q1label"></div>
+  <div class="ends"><span>1 — not at all ordered</span><span>7 — highly ordered</span></div>
+
+  <label id="q2label">How visually appealing do you find it?</label>
+  <div class="scale" id="appealScale" role="group" aria-labelledby="q2label"></div>
+  <div class="ends"><span>1 — not at all appealing</span><span>7 — very appealing</span></div>
+
+  <label for="comment">What did you notice? (optional)</label>
+  <textarea id="comment" placeholder="Anything that shaped your answer."></textarea>
+
+  <div class="row">
+    <button class="primary" id="nextBtn" disabled>Next</button>
+    <button id="withdrawBtn">Stop and withdraw</button>
+  </div>
+</section>
+
+<!-- DONE ------------------------------------------------------------------ -->
+<section id="donePanel" class="panel" hidden>
+  <h1 id="doneTitle">Finished</h1>
+  <p id="doneMsg"></p>
+  <div class="row">
+    <button class="primary" id="downloadBtn">Download my responses</button>
+    <button id="eraseBtn">Erase everything</button>
+  </div>
+  <p class="muted" id="downloadNote"></p>
+</section>
+
+<script type="module">
+  import { RatingSession, RELEASE_STATUS, INSTRUMENT_VERSION,
+           INSTRUCTIONS_VERSION, ACKNOWLEDGEMENT_VERSION, defaultStorage } from './session.js';
+  import { drawLayout, contentHash } from './render-layout.js';
+
+  const $ = (id) => document.getElementById(id);
+  const show = (id, on) => { $(id).hidden = !on; };
+  const errBox = $('errors');
+  const showError = (msg) => {
+    const d = document.createElement('div');
+    d.className = 'err'; d.textContent = msg; errBox.appendChild(d);
+  };
+
+  $('releaseStatus').textContent = RELEASE_STATUS
+    + ' · responses stay in this browser until you download them';
+  $('ackVersions').textContent =
+    `Instrument ${INSTRUMENT_VERSION} · instructions ${INSTRUCTIONS_VERSION} · acknowledgement ${ACKNOWLEDGEMENT_VERSION}`;
+
+  const storage = defaultStorage();
+  if (!storage) {
+    showError('This browser is not allowing local storage, so your progress cannot be '
+      + 'saved if you reload. You can still complete the task in one sitting and download the result.');
+  }
+
+  let manifest = null;
+  let session = null;
+  let current = { order: null, appeal: null, shownAt: null, integrityOk: true };
+
+  function buildScale(container, onPick) {
+    container.textContent = '';
+    for (let v = 1; v <= 7; v++) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = String(v);
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', () => {
+        [...container.children].forEach((c) => c.setAttribute('aria-pressed', 'false'));
+        b.setAttribute('aria-pressed', 'true');
+        onPick(v);
+      });
+      container.appendChild(b);
+    }
+  }
+  const clearScale = (c) => [...c.children].forEach((b) => b.setAttribute('aria-pressed', 'false'));
+
+  buildScale($('orderScale'), (v) => { current.order = v; refreshNext(); });
+  buildScale($('appealScale'), (v) => { current.appeal = v; refreshNext(); });
+  const refreshNext = () => { $('nextBtn').disabled = !(current.order && current.appeal); };
+
+  async function loadManifest() {
+    const res = await fetch('stimuli/manifest.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`manifest unavailable (HTTP ${res.status})`);
+    return res.json();
+  }
+
+  async function loadStimulus(id) {
+    const item = manifest.items.find((i) => i.stimulusId === id);
+    if (!item) throw new Error(`stimulus ${id} is not in the manifest`);
+    const res = await fetch(item.file, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`stimulus file missing (HTTP ${res.status})`);
+    const text = await res.text();
+    const layout = JSON.parse(text);
+    // Integrity: re-hash the canonical serialization we were served.
+    const integrityOk = contentHash(text) === item.integrity;
+    return { layout, integrityOk };
+  }
+
+  async function renderCurrent() {
+    const id = session.currentStimulusId;
+    if (!id) return finish();
+    const { current: c, total } = session.progress;
+    $('progress').textContent = `Composition ${c} of ${total}`;
+
+    try {
+      const { layout, integrityOk } = await loadStimulus(id);
+      current = { order: null, appeal: null, shownAt: new Date().toISOString(), integrityOk };
+      if (!integrityOk) {
+        showError(`Composition ${c} did not match its expected checksum. Your rating will `
+          + 'still be recorded, and flagged for review.');
+      }
+      const ctx = $('stimulus').getContext('2d');
+      drawLayout(ctx, layout, { width: 500, height: 500 });
+    } catch (e) {
+      showError(`Could not load composition ${c}: ${e.message}. Skipping it — your other `
+        + 'answers are unaffected.');
+      // Record nothing; advance so a missing asset cannot trap the participant.
+      session.state.index += 1;
+      session.save(storage);
+      return renderCurrent();
+    }
+
+    clearScale($('orderScale')); clearScale($('appealScale'));
+    $('comment').value = '';
+    refreshNext();
+    show('trialPanel', true);
+  }
+
+  function finish() {
+    show('trialPanel', false);
+    show('donePanel', true);
+    const withdrawn = session.state.withdrawn;
+    $('doneTitle').textContent = withdrawn ? 'Withdrawn' : 'Finished';
+    $('doneMsg').textContent = withdrawn
+      ? 'You have stopped. Anything you already answered is still stored in this browser only.'
+      : `Thank you. You rated ${session.state.responseCount ?? Object.keys(session.state.responses).length} composition(s).`;
+    $('downloadNote').textContent =
+      'Downloading saves a file to your device. It does not send anything to a server — '
+      + 'no collection endpoint exists for this development build.';
+  }
+
+  $('ackBtn').addEventListener('click', async () => {
+    session.acknowledge();
+    session.save(storage);
+    show('ackPanel', false);
+    await renderCurrent();
+  });
+
+  $('ackDecline').addEventListener('click', () => {
+    session.withdraw(); session.save(storage);
+    show('ackPanel', false); finish();
+  });
+
+  $('nextBtn').addEventListener('click', async () => {
+    const id = session.currentStimulusId;
+    session.record(id, {
+      order: current.order,
+      appeal: current.appeal,
+      comment: $('comment').value,
+      integrityOk: current.integrityOk,
+      shownAt: current.shownAt,
+    });
+    const saved = session.save(storage);
+    if (!saved.ok && storage) showError(`Progress could not be saved (${saved.reason}).`);
+    show('trialPanel', false);
+    await renderCurrent();
+  });
+
+  $('withdrawBtn').addEventListener('click', () => {
+    session.withdraw(); session.save(storage); finish();
+  });
+
+  $('downloadBtn').addEventListener('click', () => {
+    const rec = session.exportRecord();
+    const blob = new Blob([JSON.stringify(rec, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `order-rating-${session.state.participantId}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  $('eraseBtn').addEventListener('click', () => {
+    session.erase(storage);
+    $('doneTitle').textContent = 'Erased';
+    $('doneMsg').textContent = 'Everything you entered has been removed from this browser.';
+    $('downloadBtn').disabled = true;
+  });
+
+  // --- boot: resume if a valid save exists ---------------------------------
+  (async () => {
+    try {
+      manifest = await loadManifest();
+    } catch (e) {
+      showError(`The task cannot start: ${e.message}`);
+      return;
+    }
+
+    const loaded = RatingSession.load(storage);
+    if (loaded.ok) {
+      session = loaded.session;
+    } else {
+      if (loaded.reason === 'corrupt-saved-session') {
+        showError('A previously saved session could not be read, so a fresh one was started.');
+        RatingSession.clear(storage);
+      }
+      session = RatingSession.create({ manifest });
+      session.save(storage);
+    }
+
+    window.__rating = {
+      snapshot: () => ({
+        participantId: session.state.participantId,
+        status: session.state.status,
+        index: session.state.index,
+        total: session.state.order.length,
+        acknowledged: session.state.acknowledged,
+        withdrawn: session.state.withdrawn,
+        responseCount: Object.keys(session.state.responses).length,
+        orderSeed: session.state.orderSeed,
+        order: session.state.order,
+        storageAvailable: !!storage,
+        currentStimulusId: session.currentStimulusId,
+      }),
+      exportRecord: () => session.exportRecord(),
+      session: () => session,
+    };
+    document.body.dataset.ready = '1';
+
+    if (session.state.status === 'withdrawn' || session.state.status === 'erased' || session.complete) {
+      finish();
+    } else if (session.state.acknowledged) {
+      await renderCurrent();
+    } else {
+      show('ackPanel', true);
+    }
+  })();
+</script>

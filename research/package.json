@@ -1,0 +1,14 @@
+{
+  "name": "order-research",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Research instrument scaffolding for Order Composer. Not the public application.",
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\"",
+    "test:characterization": "node --test test/characterization.v0.test.mjs",
+    "test:equivalence": "node --test test/equivalence.test.mjs",
+    "test:v1": "node --test test/v1-requirements.test.mjs",
+    "verify:spec": "node scripts/verify-specification.mjs"
+  }
+}

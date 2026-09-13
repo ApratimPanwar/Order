@@ -1,0 +1,137 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Resume harness</title>
+<style>
+  body { font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; margin: 16px; }
+  button { font: inherit; padding: 4px 8px; margin: 0 4px 4px 0; }
+  table { border-collapse: collapse; margin-top: 12px; }
+  td { border: 1px solid #ccc; padding: 2px 8px; }
+  td:first-child { color: #555; }
+  #storageState { color: #777; }
+</style>
+
+<h1>Resume harness</h1>
+<p>
+  Development harness for testing <strong>real browser reload recovery</strong>.
+  Not part of the public application and not a participant workflow.
+</p>
+
+<div>
+  <button id="applyGrid">apply strict-grid</button>
+  <button id="applySize">apply size-uniformity</button>
+  <button id="applyRadial">apply radial-distribution</button>
+  <button id="previewRadial">preview radial-distribution</button>
+  <button id="editFirst">edit first element</button>
+  <button id="undo">undo</button>
+  <button id="redo">redo</button>
+  <button id="reset">clear storage</button>
+</div>
+
+<table>
+  <tr><td>restoredFromStorage</td><td id="restored">-</td></tr>
+  <tr><td>stateId</td><td id="stateId">-</td></tr>
+  <tr><td>historyLength</td><td id="historyLength">-</td></tr>
+  <tr><td>cursor</td><td id="cursor">-</td></tr>
+  <tr><td>canUndo / canRedo</td><td id="undoRedo">-</td></tr>
+  <tr><td>eventCount</td><td id="eventCount">-</td></tr>
+  <tr><td>lastSequenceNumber</td><td id="lastSeq">-</td></tr>
+  <tr><td>hasPendingPreview</td><td id="pending">-</td></tr>
+  <tr><td>scoreTotal</td><td id="scoreTotal">-</td></tr>
+  <tr><td>historyStateIds</td><td id="historyIds">-</td></tr>
+  <tr><td>autosaveStatus</td><td id="storageState">-</td></tr>
+</table>
+
+<script type="module">
+  import { EditorSession } from '../core/actions.js';
+  import { EventLog } from '../core/events.js';
+  import { generateLayout } from '../core/generate.js';
+  import { score } from '../core/scoring/v0-as-shipped.js';
+  import { LocalStorageAdapter } from '../core/storage.js';
+
+  const KEY = 'session/harness';
+  const adapter = new LocalStorageAdapter({ prefix: 'order-research/' });
+
+  let restoredFromStorage = false;
+  let session;
+
+  const saved = await adapter.load(KEY);
+  if (saved) {
+    try {
+      session = EditorSession.fromJSON(saved);
+      restoredFromStorage = true;
+    } catch (err) {
+      console.error('resume failed, starting fresh:', err);
+      session = fresh();
+    }
+  } else {
+    session = fresh();
+  }
+
+  function fresh() {
+    return new EditorSession(generateLayout({ seed: 2024 }), {
+      log: new EventLog({ enabled: true, trialId: 'harness' }),
+      trialId: 'harness',
+    });
+  }
+
+  async function persist() {
+    const res = await adapter.save(KEY, session.toJSON());
+    document.getElementById('storageState').textContent = res.ok
+      ? `saved (${res.receipt.byteLength} bytes)`
+      : `error: ${res.error}`;
+  }
+
+  function render() {
+    const s = session;
+    const set = (id, v) => { document.getElementById(id).textContent = String(v); };
+    set('restored', restoredFromStorage);
+    set('stateId', s.stateId);
+    set('historyLength', s.history.length);
+    set('cursor', s.cursor);
+    set('undoRedo', `${s.canUndo} / ${s.canRedo}`);
+    set('eventCount', s.log.length);
+    set('lastSeq', s.log.length ? s.log.events.at(-1).sequenceNumber : 'none');
+    set('pending', s.hasPendingPreview);
+    set('scoreTotal', score(s.layout).total.toFixed(6));
+    set('historyIds', s.history.map((h) => h.stateId).join(','));
+  }
+
+  const act = (fn) => async () => { fn(); await persist(); render(); };
+
+  document.getElementById('applyGrid').onclick = act(() => session.apply('strict-grid'));
+  document.getElementById('applySize').onclick = act(() => session.apply('size-uniformity'));
+  document.getElementById('applyRadial').onclick = act(() => session.apply('radial-distribution'));
+  document.getElementById('previewRadial').onclick = act(() => session.preview('radial-distribution'));
+  document.getElementById('undo').onclick = act(() => session.undo());
+  document.getElementById('redo').onclick = act(() => session.redo());
+  document.getElementById('editFirst').onclick = act(() => {
+    const target = session.layout.elements.find((e) => e.visible);
+    session.editElement(target.id, { x: Math.round(target.x) + 7 });
+  });
+  document.getElementById('reset').onclick = async () => {
+    await adapter.remove(KEY);
+    location.reload();
+  };
+
+  // Expose for the driving test.
+  window.__harness = {
+    snapshot: () => ({
+      restoredFromStorage,
+      stateId: session.stateId,
+      historyLength: session.history.length,
+      cursor: session.cursor,
+      canUndo: session.canUndo,
+      canRedo: session.canRedo,
+      eventCount: session.log.length,
+      lastSeq: session.log.length ? session.log.events.at(-1).sequenceNumber : null,
+      hasPendingPreview: session.hasPendingPreview,
+      scoreTotal: score(session.layout).total,
+      historyIds: session.history.map((h) => h.stateId),
+      eventTypes: session.log.typesInOrder(),
+    }),
+  };
+
+  await persist();
+  render();
+  document.body.dataset.ready = '1';
+</script>

@@ -1,0 +1,586 @@
+{
+  "keyVersion": "stimulus-key-1",
+  "builtAt": "2026-09-13T13:59:38.704Z",
+  "warning": "RESEARCHER ONLY. Never place this file inside study/. It carries conditions and model scores.",
+  "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED. Scores here are not approved measurements.",
+  "count": 13,
+  "items": [
+    {
+      "stimulusId": "stim-ef4d96d3",
+      "seed": 1,
+      "condition": "structured-grid",
+      "integrity": "53aad81d",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 52.418292941100376,
+        "dimensions": {
+          "hierarchy": 2.4428744950827896,
+          "grouping": 7.417796667925607,
+          "structure": 6.533205473922486,
+          "flow": 5.998315003115355,
+          "spatial": 5.494176382259579,
+          "variety": 3.2167419254424
+        },
+        "submetrics": {
+          "m_h,1": 0.04931549708377485,
+          "m_h,2": 0.1653903098667424,
+          "m_h,3": 0.8500630400318441,
+          "m_g,1": 1,
+          "m_g,2": 0.22533900037768229,
+          "m_g,3": 1,
+          "m_s,1": 0.07142857142857142,
+          "m_s,2": 1,
+          "m_s,3": 0.8885330707481746,
+          "m_f,1": 0.6481040796263976,
+          "m_f,2": 0.2857142857142857,
+          "m_f,3": 0.8656761355939233,
+          "m_p,1": 0.297400156656901,
+          "m_p,2": 0,
+          "m_p,3": 0.8195361348787129,
+          "m_p,4": 0.6812997830091206,
+          "m_p,5": 0.9488521165850548,
+          "m_v,1": 0.35550938471079774,
+          "m_v,2": 0.2878390003776823
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-c23cf687",
+      "seed": 2,
+      "condition": "radial",
+      "integrity": "49f99bf6",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 52.9475713951249,
+        "dimensions": {
+          "hierarchy": 2.792407330456061,
+          "grouping": 7.7743516970284965,
+          "structure": 4.509652684092588,
+          "flow": 7.201495659889234,
+          "spatial": 5.326955322419002,
+          "variety": 4.0712581875157845
+        },
+        "submetrics": {
+          "m_h,1": 0.16482470345947514,
+          "m_h,2": 0.11244568777150996,
+          "m_h,3": 0.8154733749220777,
+          "m_g,1": 1,
+          "m_g,2": 0.33230550910854895,
+          "m_g,3": 1,
+          "m_s,1": 0.020833333333333363,
+          "m_s,2": 0.4444444444444444,
+          "m_s,3": 0.8876180274499987,
+          "m_f,1": 0.7777777777777778,
+          "m_f,2": 0.5277777777777778,
+          "m_f,3": 0.8548931424112148,
+          "m_p,1": 0.3387260437011719,
+          "m_p,2": 0.03206598219153778,
+          "m_p,3": 0.5870025011858528,
+          "m_p,4": 0.7760081612379047,
+          "m_p,5": 0.9296749728930331,
+          "m_v,1": 0.44661774944173094,
+          "m_v,2": 0.36763388806142594
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-48998d03",
+      "seed": 3,
+      "condition": "as-generated",
+      "integrity": "71787d03",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 52.601880825112566,
+        "dimensions": {
+          "hierarchy": 2.343947231683257,
+          "grouping": 7.941116135921268,
+          "structure": 4.801310391699401,
+          "flow": 6.938265528394223,
+          "spatial": 4.640732304670568,
+          "variety": 5.223795055179404
+        },
+        "submetrics": {
+          "m_h,1": 0.13204400445002326,
+          "m_h,2": 0.004769239848689352,
+          "m_h,3": 0.8347097449435362,
+          "m_g,1": 1,
+          "m_g,2": 0.3823348407763805,
+          "m_g,3": 1,
+          "m_s,1": 0.05555555555555554,
+          "m_s,2": 0.5,
+          "m_s,3": 0.8848375619542648,
+          "m_f,1": 0.6641050176503633,
+          "m_f,2": 0.5555555555555556,
+          "m_f,3": 0.8618190853123483,
+          "m_p,1": 0.40323893229166663,
+          "m_p,2": 0,
+          "m_p,3": 0.3169204479589174,
+          "m_p,4": 0.7027013784710038,
+          "m_p,5": 0.8975053936136959,
+          "m_v,1": 0.6727953204070725,
+          "m_v,2": 0.3719636906288084
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-a76a3f7c",
+      "seed": 4,
+      "condition": "random-position",
+      "integrity": "e5ea9a3b",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 49.73090205408117,
+        "dimensions": {
+          "hierarchy": 1.9560314642769443,
+          "grouping": 7.474087695446919,
+          "structure": 5.017811431216881,
+          "flow": 6.5601729265228865,
+          "spatial": 3.6836559477538025,
+          "variety": 5.670273612532013
+        },
+        "submetrics": {
+          "m_h,1": 0.023814540981195505,
+          "m_h,2": 0.16706082111697002,
+          "m_h,3": 0.6678881480100283,
+          "m_g,1": 0.7777777777777778,
+          "m_g,2": 0.4644485308562977,
+          "m_g,3": 1,
+          "m_s,1": 0.041666666666666664,
+          "m_s,2": 0.6111111111111112,
+          "m_s,3": 0.8525656515872867,
+          "m_f,1": 0.6450227726656186,
+          "m_f,2": 0.5555555555555556,
+          "m_f,3": 0.7674735497356922,
+          "m_p,1": 0.30155817667643225,
+          "m_p,2": 0,
+          "m_p,3": 0,
+          "m_p,4": 0.6857453417190598,
+          "m_p,5": 0.8545244554814089,
+          "m_v,1": 0.7086753598191298,
+          "m_v,2": 0.42537936268727283
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-aa8f352e",
+      "seed": 5,
+      "condition": "structured-grid",
+      "integrity": "7bd4e8d0",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 52.96079981106581,
+        "dimensions": {
+          "hierarchy": 1.7119320613679285,
+          "grouping": 8.361380886745447,
+          "structure": 6.059111053931252,
+          "flow": 6.101643022517587,
+          "spatial": 4.959799598289333,
+          "variety": 4.8795204145199875
+        },
+        "submetrics": {
+          "m_h,1": 0.0432051221047557,
+          "m_h,2": 0.021217894607791,
+          "m_h,3": 0.7161263835103884,
+          "m_g,1": 1,
+          "m_g,2": 0.508414266023634,
+          "m_g,3": 1,
+          "m_s,1": 0.0185185185185185,
+          "m_s,2": 1,
+          "m_s,3": 0.7992147976608575,
+          "m_f,1": 0.71875,
+          "m_f,2": 0.24444444444444446,
+          "m_f,3": 0.8672984623108316,
+          "m_p,1": 0.284112294514974,
+          "m_p,2": 0,
+          "m_p,3": 0.6202442800285011,
+          "m_p,4": 0.6877034314843109,
+          "m_p,5": 0.8878397931168802,
+          "m_v,1": 0.6687426456141639,
+          "m_v,2": 0.30716143728983375
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-3a337ad1",
+      "seed": 6,
+      "condition": "radial",
+      "integrity": "eee6e44f",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 57.88695324675971,
+        "dimensions": {
+          "hierarchy": 2.4806475597244844,
+          "grouping": 8.524104204513623,
+          "structure": 5.3512669322940525,
+          "flow": 6.00642294747285,
+          "spatial": 7.3265418970091964,
+          "variety": 6.033403828021617
+        },
+        "submetrics": {
+          "m_h,1": 0.14476236844516455,
+          "m_h,2": 0.05411128680358,
+          "m_h,3": 0.7972509285439608,
+          "m_g,1": 1,
+          "m_g,2": 0.5572312613540871,
+          "m_g,3": 1,
+          "m_s,1": 0.09523809523809525,
+          "m_s,2": 0.5625,
+          "m_s,3": 0.9476419844501206,
+          "m_f,1": 0.7499999999999999,
+          "m_f,2": 0.2142857142857143,
+          "m_f,3": 0.8376411699561409,
+          "m_p,1": 0.22497812906901038,
+          "m_p,2": 0.8283802747041198,
+          "m_p,3": 0.9238899379900518,
+          "m_p,4": 0.7283343478566725,
+          "m_p,5": 0.9576882588847442,
+          "m_v,1": 0.7812698628685524,
+          "m_v,2": 0.42541090273577103
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-e776a13f",
+      "seed": 7,
+      "condition": "as-generated",
+      "integrity": "55857cdc",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 58.69179585344583,
+        "dimensions": {
+          "hierarchy": 3.2292210810326316,
+          "grouping": 8.256608096056246,
+          "structure": 4.813867601628107,
+          "flow": 7.717066302266495,
+          "spatial": 5.58640059730917,
+          "variety": 6.134234667065586
+        },
+        "submetrics": {
+          "m_h,1": 0.23584995876159848,
+          "m_h,2": 0.08643732537484229,
+          "m_h,3": 0.8953296555500563,
+          "m_g,1": 1,
+          "m_g,2": 0.4769824288168736,
+          "m_g,3": 1,
+          "m_s,1": 0.041666666666666664,
+          "m_s,2": 0.5,
+          "m_s,3": 0.9024936138217653,
+          "m_f,1": 0.7835812131383596,
+          "m_f,2": 0.6666666666666666,
+          "m_f,3": 0.8648720108749225,
+          "m_p,1": 0.29911677042643225,
+          "m_p,2": 0,
+          "m_p,3": 0.8259675191211202,
+          "m_p,4": 0.7268552871736269,
+          "m_p,5": 0.9412607219334058,
+          "m_v,1": 0.700113245429179,
+          "m_v,2": 0.5267336879839382
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-f682f0c0",
+      "seed": 8,
+      "condition": "random-position",
+      "integrity": "dd7b984c",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 50.243238346125395,
+        "dimensions": {
+          "hierarchy": 2.1540227011310895,
+          "grouping": 7.6996518451580815,
+          "structure": 4.853091932161266,
+          "flow": 6.101903594630047,
+          "spatial": 4.205547867889202,
+          "variety": 5.6522620701066595
+        },
+        "submetrics": {
+          "m_h,1": 0.06979605949789444,
+          "m_h,2": 0.11426591236830719,
+          "m_h,3": 0.7311223332683479,
+          "m_g,1": 0.9090909090909091,
+          "m_g,2": 0.40080464445651587,
+          "m_g,3": 1,
+          "m_s,1": 0.08333333333333333,
+          "m_s,2": 0.5,
+          "m_s,3": 0.8725942463150467,
+          "m_f,1": 0.6525397913162827,
+          "m_f,2": 0.38181818181818183,
+          "m_f,3": 0.7962131052545499,
+          "m_p,1": 0.42546590169270837,
+          "m_p,2": 0,
+          "m_p,3": 0,
+          "m_p,4": 0.7684121164164022,
+          "m_p,5": 0.9088959158354903,
+          "m_v,1": 0.7373360360803922,
+          "m_v,2": 0.39311637794093973
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-a8016a0c",
+      "seed": 9,
+      "condition": "structured-grid",
+      "integrity": "6b47554b",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 54.995214412782445,
+        "dimensions": {
+          "hierarchy": 2.2737538011854386,
+          "grouping": 7.690555605960228,
+          "structure": 6.5542756750786255,
+          "flow": 7.238994954929261,
+          "spatial": 5.463411958531809,
+          "variety": 3.5597304618300587
+        },
+        "submetrics": {
+          "m_h,1": 0.03046984186712932,
+          "m_h,2": 0.18838730630693734,
+          "m_h,3": 0.7781213364644899,
+          "m_g,1": 1,
+          "m_g,2": 0.30716668178806844,
+          "m_g,3": 1,
+          "m_s,1": 0.05000000000000002,
+          "m_s,2": 1,
+          "m_s,3": 0.9162827025235879,
+          "m_f,1": 0.6367438523890574,
+          "m_f,2": 0.6545454545454545,
+          "m_f,3": 0.8804091795442662,
+          "m_p,1": 0.35992304484049475,
+          "m_p,2": 0,
+          "m_p,3": 0.8512527075906864,
+          "m_p,4": 0.6237043515072791,
+          "m_p,5": 0.8968258753274445,
+          "m_v,1": 0.44822785626001926,
+          "m_v,2": 0.2637182361059924
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-5258dd88",
+      "seed": 10,
+      "condition": "radial",
+      "integrity": "96c603e1",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 56.84329794892206,
+        "dimensions": {
+          "hierarchy": 2.066592989346488,
+          "grouping": 8.5020253698558,
+          "structure": 4.41958058183514,
+          "flow": 7.201495659889234,
+          "spatial": 6.270034687916102,
+          "variety": 7.027247181474485
+        },
+        "submetrics": {
+          "m_h,1": 0.047393501998165985,
+          "m_h,2": 0.06370640858935049,
+          "m_h,3": 0.8192531267938031,
+          "m_g,1": 1,
+          "m_g,2": 0.5506076109567406,
+          "m_g,3": 1,
+          "m_s,1": 0.0416666666666667,
+          "m_s,2": 0.4444444444444444,
+          "m_s,3": 0.8397630634394309,
+          "m_f,1": 0.7777777777777778,
+          "m_f,2": 0.5277777777777778,
+          "m_f,3": 0.8548931424112148,
+          "m_p,1": 0.4941368103027344,
+          "m_p,2": 0,
+          "m_p,3": 0.8180832064524894,
+          "m_p,4": 0.8509511854881894,
+          "m_p,5": 0.971846141714637,
+          "m_v,1": 0.9294789494174724,
+          "m_v,2": 0.4759704868774245
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-290942aa",
+      "seed": 11,
+      "condition": "as-generated",
+      "integrity": "3d51002f",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 54.62409102786553,
+        "dimensions": {
+          "hierarchy": 2.1558379797993426,
+          "grouping": 8.416205184012943,
+          "structure": 4.8445093345627885,
+          "flow": 6.8592888098739015,
+          "spatial": 4.965526476693128,
+          "variety": 6.335618569015478
+        },
+        "submetrics": {
+          "m_h,1": 0.054663148220225444,
+          "m_h,2": 0.0987903200004598,
+          "m_h,3": 0.793075639348418,
+          "m_g,1": 1,
+          "m_g,2": 0.5248615552038833,
+          "m_g,3": 1,
+          "m_s,1": 0.05555555555555554,
+          "m_s,2": 0.45,
+          "m_s,3": 0.9477972448132811,
+          "m_f,1": 0.6697821034044222,
+          "m_f,2": 0.5111111111111111,
+          "m_f,3": 0.8768934284466372,
+          "m_p,1": 0.31787236531575525,
+          "m_p,2": 0,
+          "m_p,3": 0.4945599406280211,
+          "m_p,4": 0.6915370899870282,
+          "m_p,5": 0.9787938424157597,
+          "m_v,1": 0.7540372650840979,
+          "m_v,2": 0.5130864487189978
+        }
+      },
+      "diagnostics": [
+        {
+          "code": "grouping-single-cluster"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-58174ad3",
+      "seed": 12,
+      "condition": "random-position",
+      "integrity": "2e5403e3",
+      "scoreAvailable": true,
+      "v1": {
+        "total": 50.0616062652833,
+        "dimensions": {
+          "hierarchy": 3.0213336399212833,
+          "grouping": 7.058396023916975,
+          "structure": 4.256137492621903,
+          "flow": 6.587568739524409,
+          "spatial": 3.8493638900234584,
+          "variety": 5.552506389280055
+        },
+        "submetrics": {
+          "m_h,1": 0.2804913872449946,
+          "m_h,2": 0.06312308256301793,
+          "m_h,3": 0.7147537280036282,
+          "m_g,1": 1,
+          "m_g,2": 0.5684212549795992,
+          "m_g,3": 0.5490975521954935,
+          "m_s,1": 0.0185185185185185,
+          "m_s,2": 0.4,
+          "m_s,3": 0.8583227292680525,
+          "m_f,1": 0.6121174563637151,
+          "m_f,2": 0.5777777777777777,
+          "m_f,3": 0.78637538771583,
+          "m_p,1": 0.21611531575520837,
+          "m_p,2": 0,
+          "m_p,3": 0,
+          "m_p,4": 0.7855467928774026,
+          "m_p,5": 0.9230198363791179,
+          "m_v,1": 0.7000668209530303,
+          "m_v,2": 0.4104344569029805
+        }
+      },
+      "diagnostics": [],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    },
+    {
+      "stimulusId": "stim-eb51b057",
+      "seed": null,
+      "condition": "deliberately-unscorable",
+      "integrity": "5aacd1ad",
+      "scoreAvailable": false,
+      "v1": null,
+      "diagnostics": [
+        {
+          "code": "below-min-elements",
+          "detail": "3 < 4"
+        }
+      ],
+      "modelVersion": "v1-development-candidate",
+      "configVersion": "v1-config-draft-1",
+      "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED"
+    }
+  ]
+}

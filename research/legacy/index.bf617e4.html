@@ -1,0 +1,2213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Composer | Design Order Analysis Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #E5E7EB;
+            color: #1F2937;
+            overflow: hidden;
+        }
+
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .header {
+            background: #1F2937;
+            color: white;
+            padding: 12px 20px;
+            border-bottom: 3px solid #111827;
+            flex-shrink: 0;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-text h1 {
+            font-size: 1.4em;
+            margin-bottom: 2px;
+            font-weight: 700;
+        }
+
+        .header-text .subtitle {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .help-btn {
+            background: #F59E0B;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .help-btn:hover {
+            background: #D97706;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Instructions Modal */
+        .instructions-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .instructions-overlay.active {
+            display: flex;
+        }
+
+        .instructions-panel {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .instructions-header {
+            background: #1F2937;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .instructions-header h2 {
+            font-size: 1.5em;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: #EF4444;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: #DC2626;
+            transform: rotate(90deg);
+        }
+
+        .instructions-content {
+            padding: 30px;
+        }
+
+        .instruction-section {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .instruction-section:last-child {
+            border-bottom: none;
+        }
+
+        .instruction-section h3 {
+            color: #1F2937;
+            font-size: 1.3em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instruction-section h4 {
+            color: #374151;
+            font-size: 1.1em;
+            margin: 20px 0 10px 0;
+        }
+
+        .instruction-section p {
+            color: #4B5563;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .instruction-section ul {
+            color: #4B5563;
+            line-height: 1.7;
+            margin-left: 25px;
+            margin-bottom: 12px;
+        }
+
+        .instruction-section li {
+            margin-bottom: 8px;
+        }
+
+        .instruction-section strong {
+            color: #1F2937;
+        }
+
+        .panel-demo {
+            background: #F9FAFB;
+            border-left: 4px solid #3B82F6;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .constraint-box {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .limitation-box {
+            background: #FEE2E2;
+            border-left: 4px solid #EF4444;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .tip-box {
+            background: #D1FAE5;
+            border-left: 4px solid #10B981;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .main-workspace {
+            display: grid;
+            grid-template-columns: 320px 1fr 360px;
+            flex: 1;
+            min-height: 0;
+            gap: 0;
+        }
+
+        /* Left Panel - Algorithmic Controls */
+        .order-modes {
+            background: #F9FAFB;
+            border-right: 2px solid #E5E7EB;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 15px 12px 10px;
+            background: white;
+            border-bottom: 2px solid #E5E7EB;
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .panel-description {
+            font-size: 0.75em;
+            color: #6B7280;
+            line-height: 1.4;
+            padding: 8px;
+            background: #F9FAFB;
+            border-radius: 4px;
+            border-left: 3px solid #1F2937;
+        }
+
+        .modes-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .mode-btn {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border: 2px solid #E5E7EB;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            font-size: 0.85em;
+        }
+
+        .mode-btn:hover {
+            border-color: #1F2937;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .mode-btn.active {
+            background: #1F2937;
+            color: white;
+            border-color: #1F2937;
+        }
+
+        .mode-btn-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mode-btn-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #6B7280;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            cursor: help;
+            font-weight: bold;
+        }
+
+        .mode-btn.active .info-icon {
+            background: #F59E0B;
+        }
+
+        .mode-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            margin-top: 0;
+        }
+
+        .mode-details.expanded {
+            max-height: 500px;
+            margin-top: 10px;
+        }
+
+        .detail-section {
+            padding: 8px;
+            background: #F9FAFB;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            font-size: 0.75em;
+        }
+
+        .detail-section h4 {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #111827;
+        }
+
+        .detail-section p {
+            line-height: 1.4;
+            color: #4B5563;
+            margin-bottom: 6px;
+        }
+
+        .code-snippet {
+            background: #1F2937;
+            color: #10B981;
+            padding: 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7em;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        /* Center Panel - Canvas */
+        .canvas-section {
+            padding: 15px;
+            background: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        .canvas-wrapper {
+            background: #F9FAFB;
+            border: 2px solid #E5E7EB;
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            border: 2px solid #D1D5DB;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 8px 16px;
+            border: 2px solid #1F2937;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            color: #1F2937;
+            font-size: 0.85em;
+        }
+
+        .action-btn:hover {
+            background: #1F2937;
+            color: white;
+        }
+
+        .order-analysis {
+            background: #F9FAFB;
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px solid #E5E7EB;
+        }
+
+        .score-display {
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #E5E7EB;
+        }
+
+        .overall-score {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #1F2937;
+        }
+
+        .score-category {
+            font-size: 0.9em;
+            color: #6B7280;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .principle-score {
+            display: grid;
+            grid-template-columns: 90px 1fr 50px;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .principle-name {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.8em;
+        }
+
+        .principle-bar {
+            height: 8px;
+            background: #E5E7EB;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .principle-bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .principle-value {
+            font-weight: 700;
+            color: #1F2937;
+            text-align: right;
+            font-size: 0.8em;
+        }
+
+        /* Right Panel - Manual Controls */
+        .element-controls {
+            background: #F9FAFB;
+            border-left: 2px solid #E5E7EB;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .element-controls .panel-header {
+            padding: 15px 12px 10px;
+        }
+
+        .controls-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .element-group {
+            margin-bottom: 12px;
+        }
+
+        .element-group-title {
+            font-weight: 700;
+            color: #111827;
+            font-size: 0.85em;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: white;
+            border-radius: 4px;
+            border: 2px solid #E5E7EB;
+        }
+
+        .element-card {
+            background: white;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 6px;
+            border: 2px solid #E5E7EB;
+            transition: all 0.2s ease;
+        }
+
+        .element-card.active {
+            border-color: #1F2937;
+        }
+
+        .element-card.hidden {
+            opacity: 0.4;
+        }
+
+        .element-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .element-name {
+            font-weight: 600;
+            font-size: 0.75em;
+            color: #374151;
+        }
+
+        .toggle-btn {
+            background: #1F2937;
+            color: white;
+            border: none;
+            padding: 3px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.7em;
+            font-weight: 600;
+        }
+
+        .toggle-btn.hidden-state {
+            background: #9CA3AF;
+        }
+
+        .element-controls-compact {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .compact-control {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .compact-label {
+            font-size: 0.7em;
+            color: #6B7280;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #D1D5DB;
+            outline: none;
+            -webkit-appearance: none;
+            border-radius: 2px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #1F2937;
+            cursor: pointer;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 28px;
+            border: 2px solid #D1D5DB;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .size-control, .rotation-control {
+            grid-column: 1 / -1;
+        }
+
+        .footer {
+            background: #1F2937;
+            color: white;
+            padding: 8px 20px;
+            font-size: 0.7em;
+            text-align: center;
+            flex-shrink: 0;
+            border-top: 2px solid #111827;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0.8;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #F3F4F6;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #9CA3AF;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6B7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- TOP: Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-text">
+                    <h1>🎨 Order Composer: Interactive Design Analysis Tool</h1>
+                    <p class="subtitle">A computational approach to understanding and applying principles of visual order</p>
+                </div>
+                <button class="help-btn" onclick="toggleInstructions()">
+                    <span>❓</span>
+                    <span>Instructions</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Instructions Overlay -->
+        <div class="instructions-overlay" id="instructionsOverlay" onclick="closeInstructionsOnOverlay(event)">
+            <div class="instructions-panel" onclick="event.stopPropagation()">
+                <div class="instructions-header">
+                    <h2>📖 How to Use Order Composer</h2>
+                    <button class="close-btn" onclick="toggleInstructions()">×</button>
+                </div>
+                <div class="instructions-content">
+                    
+                    <div class="instruction-section">
+                        <h3>🎯 What is Order Composer?</h3>
+                        <p>Order Composer is an interactive tool that demonstrates how computational algorithms can analyze and create visual order in design compositions. It combines manual control with algorithmic transformations to teach design principles through experimentation.</p>
+                        <div class="tip-box">
+                            <strong>💡 Purpose:</strong> This tool bridges the gap between intuitive design and computational design theory, making abstract principles tangible and measurable.
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>🚀 Getting Started</h3>
+                        <h4>Basic Workflow:</h4>
+                        <ul>
+                            <li><strong>Step 1:</strong> Click <strong>"🎲 Generate New"</strong> to create a random composition with 16 geometric elements</li>
+                            <li><strong>Step 2:</strong> View the automatic <strong>Order Analysis</strong> scores (0-100%) below the canvas</li>
+                            <li><strong>Step 3:</strong> Apply <strong>Algorithmic Modes</strong> (left panel) to transform the composition</li>
+                            <li><strong>Step 4:</strong> Fine-tune with <strong>Manual Controls</strong> (right panel) for individual elements</li>
+                            <li><strong>Step 5:</strong> Observe how order scores change in real-time as you modify the design</li>
+                        </ul>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>◀️ Left Panel: Algorithmic Order Modes</h3>
+                        <div class="panel-demo">
+                            <strong>Purpose:</strong> Apply computational design principles with one click
+                        </div>
+                        <p>This panel contains 11 algorithmic transformations, each implementing a specific design principle:</p>
+                        <ul>
+                            <li><strong>Click any mode button</strong> to apply its algorithm to visible elements</li>
+                            <li><strong>Click the ⓘ icon</strong> to expand detailed explanations of how each algorithm works</li>
+                            <li><strong>Active mode</strong> is highlighted with dark background</li>
+                            <li>Modes include: Shape Grouping, Size Uniformity, Grid Alignment, Visual Hierarchy, Rhythmic Spacing, Proximity Clustering, Balance, Rotation Alignment, Face Direction, Symmetry, Color Harmony, and Radial Distribution</li>
+                        </ul>
+                        <div class="tip-box">
+                            <strong>💡 Tip:</strong> Try applying different modes sequentially to see how they combine. Each mode modifies the current state, not the original.
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>▶️ Center Panel: Canvas & Analysis</h3>
+                        <div class="panel-demo">
+                            <strong>Purpose:</strong> Visualize composition and view quantitative order metrics
+                        </div>
+                        
+                        <h4>Canvas (500×500px)</h4>
+                        <p>Displays your composition with all visible elements. A subtle 8px grid helps visualize alignment.</p>
+                        
+                        <h4>Action Buttons</h4>
+                        <ul>
+                            <li><strong>🎲 Generate New:</strong> Creates a new random composition with 6-10 visible elements (out of 16 total)</li>
+                            <li><strong>🔄 Reset Original:</strong> Reverts to the last generated composition, undoing all modifications</li>
+                        </ul>
+                        
+                        <h4>Order Analysis Dashboard</h4>
+                        <p>Real-time scoring system (0-100%) that evaluates six design principles:</p>
+                        <ul>
+                            <li><strong>Hierarchy (20%):</strong> Clear size/importance differences</li>
+                            <li><strong>Grouping (18%):</strong> Consistent spacing relationships</li>
+                            <li><strong>Structure (16%):</strong> Grid alignment and systematic organization</li>
+                            <li><strong>Flow (15%):</strong> Logical progression from important to less important</li>
+                            <li><strong>Spatial (12%):</strong> White space balance and visual weight distribution</li>
+                            <li><strong>Harmony (19%):</strong> Consistency in size, rotation, and fill properties</li>
+                        </ul>
+                        <p><strong>Overall Score</strong> is a weighted average of all six principles.</p>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>▶️ Right Panel: Manual Element Controls</h3>
+                        <div class="panel-demo">
+                            <strong>Purpose:</strong> Fine-tune individual element properties
+                        </div>
+                        <p>Contains all 16 elements organized by shape type (Circles, Squares, Rectangles, Triangles).</p>
+                        
+                        <h4>For Each Element:</h4>
+                        <ul>
+                            <li><strong>Show/Hide Button:</strong> Toggle element visibility</li>
+                            <li><strong>X Position Slider:</strong> Horizontal position (0-500px)</li>
+                            <li><strong>Y Position Slider:</strong> Vertical position (0-500px)</li>
+                            <li><strong>Size Slider:</strong> Element dimensions (20-200px)</li>
+                            <li><strong>Rotation Slider:</strong> Angle (0-360°) - shows directional arrows temporarily when adjusted</li>
+                            <li><strong>Color Picker:</strong> Change element color (affects visual weight and harmony scores)</li>
+                        </ul>
+                        
+                        <div class="tip-box">
+                            <strong>💡 Pro Tip:</strong> Hidden elements don't affect order scores. Use Show/Hide to experiment with different element counts.
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>⚠️ Composition Generator Constraints</h3>
+                        <div class="constraint-box">
+                            <h4>Fixed Element Set</h4>
+                            <p><strong>Constraint:</strong> Exactly 16 elements total (4 of each shape type)</p>
+                            <p><strong>Rationale:</strong> Fixed set allows consistent scoring and comparison across compositions. More elements would create visual chaos and make algorithmic transformations less meaningful.</p>
+                        </div>
+                        
+                        <div class="constraint-box">
+                            <h4>Random Generation Parameters</h4>
+                            <p><strong>Visibility:</strong> 60% chance per element (typically 6-10 visible elements)</p>
+                            <p><strong>Position:</strong> Random within inner 400×400px area (50px margin from edges)</p>
+                            <p><strong>Size:</strong> Random between 40-120px</p>
+                            <p><strong>Rotation:</strong> Random 0-360°</p>
+                            <p><strong>Color:</strong> Selected from 8-color palette (grays + warm accent colors)</p>
+                            <p><strong>Fill:</strong> 80% chance of filled, 20% outlined only</p>
+                            <p><strong>Rationale:</strong> These constraints ensure generated compositions have enough variety to be interesting but aren't so chaotic that order principles can't be applied effectively.</p>
+                        </div>
+
+                        <div class="constraint-box">
+                            <h4>Canvas Boundaries</h4>
+                            <p><strong>Constraint:</strong> 500×500px fixed canvas size with 8px baseline grid</p>
+                            <p><strong>Rationale:</strong> Fixed dimensions allow consistent spatial relationships and scoring metrics. The 8px grid follows modern UI design standards.</p>
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>⚙️ Known Limitations & Design Decisions</h3>
+                        
+                        <div class="limitation-box">
+                            <h4>1. Algorithmic Mode Interactions</h4>
+                            <p><strong>Issue:</strong> Applying multiple algorithmic modes sequentially can produce unexpected results</p>
+                            <p><strong>Why:</strong> Each mode modifies the current state, not the original. Some combinations conflict (e.g., Grid Alignment after Radial Distribution removes the circular pattern).</p>
+                            <p><strong>Workaround:</strong> Use "Reset Original" to start fresh before applying a different mode, or understand that modes build upon each other.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>2. Order Scoring Subjectivity</h4>
+                            <p><strong>Issue:</strong> High scores don't always mean "beautiful" - they mean "orderly"</p>
+                            <p><strong>Why:</strong> Order is quantifiable; beauty is subjective. A perfectly gridded composition scores high but may feel rigid or boring.</p>
+                            <p><strong>Insight:</strong> This tool measures mathematical order, not aesthetic quality. Great design often balances order with controlled chaos.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>3. Limited Element Diversity</h4>
+                            <p><strong>Issue:</strong> Only 4 basic shapes available (circle, square, rectangle, triangle)</p>
+                            <p><strong>Why:</strong> Simplicity allows focus on spatial relationships rather than complex form. Additional shapes would complicate algorithmic transformations.</p>
+                            <p><strong>Design Decision:</strong> Intentionally minimal to teach fundamental principles before adding complexity.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>4. No Undo/Redo System</h4>
+                            <p><strong>Issue:</strong> Can't step backward through changes except by resetting to original</p>
+                            <p><strong>Why:</strong> Implementing history would add significant complexity to the codebase for an educational tool.</p>
+                            <p><strong>Workaround:</strong> Make note of successful configurations or generate new compositions frequently.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>5. Performance with Many Visible Elements</h4>
+                            <p><strong>Issue:</strong> Some algorithms (like Proximity Clustering) can be slow with all 16 elements visible</p>
+                            <p><strong>Why:</strong> Iterative algorithms with O(n²) complexity. Intentional to show computational cost of design decisions.</p>
+                            <p><strong>Insight:</strong> Real-world design tools face similar trade-offs between algorithm sophistication and performance.</p>
+                        </div>
+
+                        <div class="limitation-box">
+                            <h4>6. Directional Arrows Temporary Display</h4>
+                            <p><strong>Design Decision:</strong> Face direction arrows only appear for 3 seconds when rotation changes</p>
+                            <p><strong>Why:</strong> Keeps canvas clean while providing feedback when needed. Arrows add visual clutter if always visible.</p>
+                            <p><strong>Trigger:</strong> Adjusting rotation slider or clicking Rotation Alignment / Face Direction modes.</p>
+                        </div>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>🎓 Educational Context</h3>
+                        <p>This tool was developed as part of the <strong>Elements of Design</strong> course at the Indian Institute of Science (IISc), Bangalore. It demonstrates how:</p>
+                        <ul>
+                            <li>Abstract design principles can be quantified and measured</li>
+                            <li>Computational thinking applies to creative disciplines</li>
+                            <li>Algorithms can both analyze existing designs and generate new ones</li>
+                            <li>Mathematical concepts (golden ratio, gamma correction, circular mean) underpin visual harmony</li>
+                            <li>Design "rules" are really perceptual patterns that can be codified</li>
+                        </ul>
+                        <p><strong>Learning Objective:</strong> Understand that good design isn't magic - it follows measurable principles that can be learned, applied systematically, and even automated.</p>
+                    </div>
+
+                    <div class="instruction-section">
+                        <h3>📚 Further Exploration</h3>
+                        <div class="tip-box">
+                            <p><strong>Experiment:</strong> Try to manually create a composition that scores 90%+ without using algorithmic modes. It's harder than it looks!</p>
+                            <p><strong>Compare:</strong> Generate two compositions and apply the same algorithmic mode to both. Notice how the same algorithm produces different results based on initial conditions.</p>
+                            <p><strong>Reverse Engineer:</strong> Find a high-scoring generated composition and try to identify which design principles it exemplifies.</p>
+                            <p><strong>Challenge:</strong> Create the most visually interesting composition you can with the lowest possible order score. This demonstrates the tension between order and visual interest.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE: Three-Panel Workspace -->
+        <div class="main-workspace">
+            <!-- LEFT PANEL: Algorithmic Order Modes -->
+            <div class="order-modes">
+                <div class="panel-header">
+                    <div class="panel-title">Algorithmic Order Modes</div>
+                    <div class="panel-description">
+                        Apply computational design principles. Click ⓘ for details.
+                    </div>
+                </div>
+                
+                <div class="modes-container">
+                
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'shape')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>🔷</span>
+                            <span>Shape Grouping</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Separates all circles, squares, rectangles, and triangles into their own groups and arranges each group in a circular cluster.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Sort by shape type
+circles = filter(type == 'circle')
+squares = filter(type == 'square')
+
+// 2. Place each group in a corner
+// 3. Arrange group members in a circle
+angle = i * (360° / groupSize)
+x = centerX + cos(angle) * radius</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates clear visual categories. Similar shapes together = easier to understand and scan the composition.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'size')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>📏</span>
+                            <span>Size Uniformity</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Makes all elements the same size by calculating the average and applying it to everyone.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Add up all sizes
+total = size1 + size2 + size3...
+
+// 2. Divide by count to get average
+avgSize = total / elementCount
+
+// 3. Round to nearest 8px grid
+finalSize = round(avgSize / 8) * 8
+
+// 4. Apply to all elements
+everyone.size = finalSize</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Equal sizing creates visual rhythm and reduces noise. Other properties (position, color, shape) can now communicate hierarchy instead.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'grid')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>📐</span>
+                            <span>Strict Grid</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Snaps everything to an invisible 8-pixel grid. Positions, sizes, and rotations all become multiples of specific values.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// Round position to nearest 8px
+x = round(x / 8) * 8
+y = round(y / 8) * 8
+
+// Round size to nearest 8px
+size = round(size / 8) * 8
+
+// Round rotation to nearest 15°
+rotation = round(rotation / 15) * 15
+
+// Keep within canvas bounds</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates mathematical precision and structural integrity. Everything aligns to invisible guidelines, producing harmonious spacing.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'hierarchy')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>📊</span>
+                            <span>Visual Hierarchy</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Ranks elements by "visual weight" (how much attention they grab) and resizes them using the golden ratio. Most important = largest and centered.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Calculate visual weight
+weight = size(40%) + contrast(30%) 
+       + centerDistance(20%) + color(10%)
+
+// 2. Rank from highest to lowest
+
+// 3. Apply golden ratio sizing
+size = 120 / (1.618 ^ rank)
+// rank 0: 120px
+// rank 1: 74px  
+// rank 2: 46px...
+
+// 4. Position: center for #1, 
+//    circle around it for others</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates clear importance levels. Eye naturally goes to largest/central element first, then follows the size progression.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'rhythm')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>🎵</span>
+                            <span>Rhythmic Spacing</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Lines up all elements horizontally with equal spacing between them. Alternates size: large-small-large-small pattern.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Calculate equal spacing
+spacing = canvasWidth / (count + 1)
+
+// 2. Position horizontally
+element[0].x = spacing * 1
+element[1].x = spacing * 2
+element[2].x = spacing * 3...
+
+// 3. Center vertically
+everyone.y = canvasHeight / 2
+
+// 4. Alternate sizes
+if (position is even): size = 70px
+if (position is odd):  size = 50px</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates predictable beats like music. The alternating pattern guides your eye smoothly left to right across the canvas.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'proximity')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>👥</span>
+                            <span>Proximity Clustering</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Moves elements closer to their nearest neighbors in 10 steps, like magnets attracting. Creates tight groups without overlapping.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// Repeat 10 times:
+for (pass 1 to 10):
+  
+  // For each element:
+  1. Find closest neighbor
+  2. Calculate distance to them
+  3. Move 30% closer
+  
+  // But prevent overlap:
+  minDistance = (size1 + size2)/2 + 10px
+  if (tooClose): stop moving</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Gestalt principle: nearby objects feel related. Creates visual groups that the brain automatically perceives as belonging together.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'balance')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>⚖️</span>
+                            <span>Visual Balance</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Calculates where the "visual center of mass" is and shifts everything to balance it in the actual center. Like balancing a tray.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Calculate each element's weight
+//    (lighter colors = lighter weight)
+brightness = 0.21*R + 0.72*G + 0.07*B
+weight = size * brightness
+
+// 2. Find weighted center
+centerX = sum(x * weight) / sum(weight)
+centerY = sum(y * weight) / sum(weight)
+
+// 3. Calculate shift needed
+offset = canvasCenter - actualCenter
+
+// 4. Move everyone by that offset</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates perceptual equilibrium. Dark/large elements feel "heavier" - this algorithm accounts for that so the composition doesn't feel lopsided.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'rotation')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>🔄</span>
+                            <span>Rotation Alignment</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Calculates the average angle of all elements and rotates everyone to match it. Creates unified directional flow.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// Can't just average angles!
+// 350° + 10° = 360° ≠ 180° (wrong!)
+
+// Use circular mean instead:
+// 1. Convert angles to vectors
+xComponent = sum(cos(angle))
+yComponent = sum(sin(angle))
+
+// 2. Find average vector direction
+avgAngle = atan2(yComponent, xComponent)
+
+// 3. Apply to everyone
+everyone.rotation = avgAngle</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Directional unity reduces visual tension. All elements "point" the same way, suggesting unified purpose and creating smooth flow.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'avgface')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>➡️</span>
+                            <span>Average Face Direction</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Finds the most popular facing direction (not average!) and rotates everyone to face that way. Like majority vote instead of compromise.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Round to 8 cardinal directions
+//    0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°
+rounded = round(angle / 45) * 45
+
+// 2. Count how many point each way
+0°:   ||||| (5 elements)
+45°:  || (2 elements)  
+90°:  |||| (4 elements)
+...
+
+// 3. Find the winner (mode)
+mostCommon = 0° (has 5 votes)
+
+// 4. Everyone faces that direction</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Stronger directional unity than averaging. Creates powerful visual momentum - the composition "moves" in one direction.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'symmetry')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>🦋</span>
+                            <span>Bilateral Symmetry</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Creates perfect mirror pairs across a vertical center line. Left side is exact reflection of right side.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">centerX = canvasWidth / 2
+
+// Pair up elements
+for (i = 0, 2, 4, 6...):
+  elem1 = elements[i]
+  elem2 = elements[i+1]
+  
+  // Mirror positions
+  distance = |elem1.x - centerX|
+  elem1.x = centerX - distance
+  elem2.x = centerX + distance
+  
+  // Match properties
+  elem2.y = elem1.y
+  elem2.size = elem1.size
+  elem2.rotation = elem1.rotation</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Symmetry = instant order. The brain recognizes and loves symmetry - it feels stable, formal, and professionally balanced.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'color')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>🎨</span>
+                            <span>Color Harmony</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Analyzes existing colors and applies color theory: complementary colors (opposites) for few elements, analogous colors (neighbors) for many.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">// 1. Find average hue (color angle)
+avgHue = mean(allColors)
+
+// 2. Apply color relationship
+if (4 or fewer elements):
+  // Complementary (opposite colors)
+  even: hue = avgHue
+  odd:  hue = avgHue + 180°
+else:
+  // Analogous (adjacent colors)
+  spread colors ±30° around avgHue
+
+// 3. Vary lightness for depth
+lightness = 45% + (position * 5%)</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Color relationships create emotional cohesion. Harmonious palettes feel intentional and professional instead of random.</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button class="mode-btn" onclick="toggleModeDetails(this, 'radial')">
+                    <div class="mode-btn-header">
+                        <span class="mode-btn-title">
+                            <span>🎯</span>
+                            <span>Radial Distribution</span>
+                        </span>
+                        <span class="info-icon">ⓘ</span>
+                    </div>
+                    <div class="mode-details">
+                        <div class="detail-section">
+                            <h4>What it does</h4>
+                            <p>Arranges all elements in a perfect circle around the canvas center, evenly spaced like numbers on a clock.</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4>How it works</h4>
+                            <div class="code-snippet">center = {x: 250, y: 250}
+radius = 150px
+
+// Calculate angle for each element
+for (i = 0 to elementCount):
+  angle = (i / elementCount) * 360°
+  
+  // Convert angle to position
+  x = centerX + cos(angle) * radius
+  y = centerY + sin(angle) * radius
+  
+  // Rotate to point outward
+  rotation = angle + 90°</div>
+                        </div>
+                        <div class="detail-section">
+                            <h4>Design Impact</h4>
+                            <p>Creates strong focal emphasis on the center. All elements point toward or radiate from one spot, creating unified circular flow.</p>
+                        </div>
+                    </div>
+                </button>
+                </div>
+            </div>
+
+            <!-- CENTER: Canvas & Analysis -->
+            <div class="canvas-section">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas" width="500" height="500"></canvas>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="generateNewComposition()">
+                        🎲 Generate New
+                    </button>
+                    <button class="action-btn" onclick="resetComposition()">
+                        🔄 Reset Original
+                    </button>
+                </div>
+
+                <div class="order-analysis">
+                    <div class="score-display">
+                        <div class="overall-score" id="overallScore">0%</div>
+                        <div class="score-category" id="scoreCategory">Generate to start</div>
+                    </div>
+
+                    <div class="principle-score">
+                        <span class="principle-name">Hierarchy</span>
+                        <div class="principle-bar">
+                            <div class="principle-bar-fill" id="hierarchyBar"></div>
+                        </div>
+                        <span class="principle-value" id="hierarchyScore">0/10</span>
+                    </div>
+
+                    <div class="principle-score">
+                        <span class="principle-name">Grouping</span>
+                        <div class="principle-bar">
+                            <div class="principle-bar-fill" id="groupingBar"></div>
+                        </div>
+                        <span class="principle-value" id="groupingScore">0/10</span>
+                    </div>
+
+                    <div class="principle-score">
+                        <span class="principle-name">Structure</span>
+                        <div class="principle-bar">
+                            <div class="principle-bar-fill" id="structureBar"></div>
+                        </div>
+                        <span class="principle-value" id="structureScore">0/10</span>
+                    </div>
+
+                    <div class="principle-score">
+                        <span class="principle-name">Flow</span>
+                        <div class="principle-bar">
+                            <div class="principle-bar-fill" id="flowBar"></div>
+                        </div>
+                        <span class="principle-value" id="flowScore">0/10</span>
+                    </div>
+
+                    <div class="principle-score">
+                        <span class="principle-name">Spatial</span>
+                        <div class="principle-bar">
+                            <div class="principle-bar-fill" id="spatialBar"></div>
+                        </div>
+                        <span class="principle-value" id="spatialScore">0/10</span>
+                    </div>
+
+                    <div class="principle-score">
+                        <span class="principle-name">Harmony</span>
+                        <div class="principle-bar">
+                            <div class="principle-bar-fill" id="harmonyBar"></div>
+                        </div>
+                        <span class="principle-value" id="harmonyScore">0/10</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Manual Element Controls -->
+            <div class="element-controls">
+                <div class="panel-header">
+                    <div class="panel-title">Manual Controls</div>
+                    <div class="panel-description">
+                        Fine-tune each element individually (16 total).
+                    </div>
+                </div>
+                
+                <div class="controls-container" id="elementControlsContainer"></div>
+            </div>
+        </div>
+
+        <!-- BOTTOM: Footer -->
+        <div class="footer">
+            <div class="footer-content">
+                <span><strong>Created by:</strong> Apratim Panwar | IISc Bangalore | <strong>Guided by:</strong> Prof. Vishal Singh</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PHI = 1.618033988749;
+        const CANVAS_SIZE = 500;
+        const GRID_SIZE = 8;
+        const SHAPE_TYPES = ['circle', 'square', 'rectangle', 'triangle'];
+        
+        let canvas, ctx;
+        let allElements = [];
+        let originalState = [];
+        let showArrows = false;
+        let arrowTimer = null;
+
+        class Element {
+            constructor(type, index) {
+                this.type = type;
+                this.index = index;
+                this.id = `${type}-${index}`;
+                this.visible = false;
+                this.x = CANVAS_SIZE / 2;
+                this.y = CANVAS_SIZE / 2;
+                this.size = 80;
+                this.size2 = type === 'rectangle' ? 120 : 80;
+                this.rotation = 0;
+                this.color = '#1F2937';
+                this.filled = true;
+            }
+
+            draw(ctx) {
+                if (!this.visible) return;
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation * Math.PI / 180);
+                
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 3;
+
+                switch(this.type) {
+                    case 'circle':
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                        this.filled ? ctx.fill() : ctx.stroke();
+                        break;
+                    
+                    case 'square':
+                        if (this.filled) {
+                            ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                        } else {
+                            ctx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+                        }
+                        break;
+                    
+                    case 'rectangle':
+                        if (this.filled) {
+                            ctx.fillRect(-this.size/2, -this.size2/2, this.size, this.size2);
+                        } else {
+                            ctx.strokeRect(-this.size/2, -this.size2/2, this.size, this.size2);
+                        }
+                        break;
+                    
+                    case 'triangle':
+                        ctx.beginPath();
+                        ctx.moveTo(0, -this.size * 0.433);
+                        ctx.lineTo(-this.size / 2, this.size * 0.433);
+                        ctx.lineTo(this.size / 2, this.size * 0.433);
+                        ctx.closePath();
+                        this.filled ? ctx.fill() : ctx.stroke();
+                        break;
+                }
+                
+                // Draw face direction indicator (small arrow) - only when showArrows is true
+                if (showArrows) {
+                    const arrowSize = Math.min(this.size * 0.3, 15);
+                    ctx.strokeStyle = this.filled ? 'rgba(255, 255, 255, 0.7)' : this.color;
+                    ctx.fillStyle = this.filled ? 'rgba(255, 255, 255, 0.7)' : this.color;
+                    ctx.lineWidth = 2;
+                    
+                    // Arrow pointing right (in local coordinates)
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(arrowSize, 0);
+                    ctx.stroke();
+                    
+                    // Arrowhead
+                    ctx.beginPath();
+                    ctx.moveTo(arrowSize, 0);
+                    ctx.lineTo(arrowSize - 5, -4);
+                    ctx.lineTo(arrowSize - 5, 4);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+
+            getArea() {
+                switch(this.type) {
+                    case 'circle': return Math.PI * (this.size / 2) ** 2;
+                    case 'square': return this.size ** 2;
+                    case 'rectangle': return this.size * this.size2;
+                    case 'triangle': return (this.size ** 2) * Math.sqrt(3) / 4;
+                    default: return 0;
+                }
+            }
+
+            getVisualWeight() {
+                if (!this.visible) return 0;
+                
+                const sizeFactor = this.getArea() / (CANVAS_SIZE * CANVAS_SIZE);
+                const contrastFactor = this.filled ? 0.8 : 0.4;
+                const distFromCenter = Math.sqrt((this.x - CANVAS_SIZE/2)**2 + (this.y - CANVAS_SIZE/2)**2);
+                const maxDist = Math.sqrt((CANVAS_SIZE/2)**2 + (CANVAS_SIZE/2)**2);
+                const positionFactor = 1 - (distFromCenter / maxDist);
+                
+                const rgb = this.hexToRgb(this.color);
+                const hsl = this.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                const saturationFactor = hsl.s / 100;
+                
+                return sizeFactor * 0.4 + contrastFactor * 0.3 + positionFactor * 0.2 + saturationFactor * 0.1;
+            }
+
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : { r: 0, g: 0, b: 0 };
+            }
+
+            rgbToHsl(r, g, b) {
+                r /= 255; g /= 255; b /= 255;
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                let h, s, l = (max + min) / 2;
+
+                if (max === min) {
+                    h = s = 0;
+                } else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                        case g: h = ((b - r) / d + 2) / 6; break;
+                        case b: h = ((r - g) / d + 4) / 6; break;
+                    }
+                }
+
+                return { h: h * 360, s: s * 100, l: l * 100 };
+            }
+
+            clone() {
+                const cloned = new Element(this.type, this.index);
+                Object.assign(cloned, JSON.parse(JSON.stringify(this)));
+                return cloned;
+            }
+        }
+
+        function init() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            SHAPE_TYPES.forEach(type => {
+                for (let i = 0; i < 4; i++) {
+                    allElements.push(new Element(type, i + 1));
+                }
+            });
+            
+            generateNewComposition();
+            buildElementControls();
+        }
+
+        function toggleInstructions() {
+            const overlay = document.getElementById('instructionsOverlay');
+            overlay.classList.toggle('active');
+        }
+
+        function closeInstructionsOnOverlay(event) {
+            if (event.target.id === 'instructionsOverlay') {
+                toggleInstructions();
+            }
+        }
+
+        function toggleModeDetails(button, mode) {
+            const details = button.querySelector('.mode-details');
+            const wasExpanded = details.classList.contains('expanded');
+            
+            document.querySelectorAll('.mode-details').forEach(d => d.classList.remove('expanded'));
+            
+            if (!wasExpanded) {
+                details.classList.add('expanded');
+            }
+            
+            applyOrderMode(mode);
+            
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            button.classList.add('active');
+        }
+
+        function generateNewComposition() {
+            const colors = ['#1F2937', '#374151', '#4B5563', '#6B7280', '#DC2626', '#EA580C', '#D97706', '#65A30D'];
+            
+            allElements.forEach(elem => {
+                elem.visible = Math.random() > 0.4;
+                if (elem.visible) {
+                    elem.x = 100 + Math.random() * 300;
+                    elem.y = 100 + Math.random() * 300;
+                    elem.size = 40 + Math.random() * 80;
+                    elem.size2 = elem.type === 'rectangle' ? elem.size * 1.5 : elem.size;
+                    elem.rotation = Math.floor(Math.random() * 360);
+                    elem.color = colors[Math.floor(Math.random() * colors.length)];
+                    elem.filled = Math.random() > 0.2;
+                }
+            });
+            
+            saveOriginalState();
+            buildElementControls();
+            drawCanvas();
+            analyzeOrder();
+        }
+
+        function resetComposition() {
+            allElements = originalState.map(e => e.clone());
+            buildElementControls();
+            drawCanvas();
+            analyzeOrder();
+        }
+
+        function saveOriginalState() {
+            originalState = allElements.map(e => e.clone());
+        }
+
+        function toggleElement(id) {
+            const elem = allElements.find(e => e.id === id);
+            if (elem) {
+                elem.visible = !elem.visible;
+                if (elem.visible && elem.x === CANVAS_SIZE / 2 && elem.y === CANVAS_SIZE / 2) {
+                    elem.x = 100 + Math.random() * 300;
+                    elem.y = 100 + Math.random() * 300;
+                    elem.rotation = Math.floor(Math.random() * 360);
+                }
+                buildElementControls();
+                drawCanvas();
+                analyzeOrder();
+            }
+        }
+
+        function updateElementProp(id, prop, value) {
+            const elem = allElements.find(e => e.id === id);
+            if (elem) {
+                elem[prop] = prop === 'color' ? value : parseFloat(value);
+                
+                // Show arrows temporarily when rotation is changed
+                if (prop === 'rotation') {
+                    showArrowsTemporarily();
+                }
+                
+                drawCanvas();
+                analyzeOrder();
+            }
+        }
+
+        function buildElementControls() {
+            const container = document.getElementById('elementControlsContainer');
+            container.innerHTML = '';
+            
+            const icons = { circle: '⚪', square: '🟦', rectangle: '▭', triangle: '🔺' };
+            
+            SHAPE_TYPES.forEach(type => {
+                const group = document.createElement('div');
+                group.className = 'element-group';
+                
+                const title = document.createElement('div');
+                title.className = 'element-group-title';
+                title.innerHTML = `<span>${icons[type]}</span><span>${type.charAt(0).toUpperCase() + type.slice(1)}s</span>`;
+                group.appendChild(title);
+                
+                const elements = allElements.filter(e => e.type === type);
+                elements.forEach(elem => {
+                    const card = document.createElement('div');
+                    card.className = `element-card ${elem.visible ? 'active' : 'hidden'}`;
+                    
+                    card.innerHTML = `
+                        <div class="element-header">
+                            <span class="element-name">${type.charAt(0).toUpperCase() + type.slice(1)} ${elem.index}</span>
+                            <button class="toggle-btn ${!elem.visible ? 'hidden-state' : ''}" 
+                                    onclick="toggleElement('${elem.id}')">
+                                ${elem.visible ? 'Hide' : 'Show'}
+                            </button>
+                        </div>
+                        ${elem.visible ? `
+                        <div class="element-controls-compact">
+                            <div class="compact-control">
+                                <span class="compact-label">X: ${Math.round(elem.x)}</span>
+                                <input type="range" min="0" max="${CANVAS_SIZE}" value="${elem.x}" 
+                                       oninput="updateElementProp('${elem.id}', 'x', this.value)">
+                            </div>
+                            <div class="compact-control">
+                                <span class="compact-label">Y: ${Math.round(elem.y)}</span>
+                                <input type="range" min="0" max="${CANVAS_SIZE}" value="${elem.y}" 
+                                       oninput="updateElementProp('${elem.id}', 'y', this.value)">
+                            </div>
+                            <div class="compact-control size-control">
+                                <span class="compact-label">Size: ${Math.round(elem.size)}</span>
+                                <input type="range" min="20" max="200" value="${elem.size}" 
+                                       oninput="updateElementProp('${elem.id}', 'size', this.value)">
+                            </div>
+                            <div class="compact-control rotation-control">
+                                <span class="compact-label">Rotation: ${Math.round(elem.rotation)}°</span>
+                                <input type="range" min="0" max="360" value="${elem.rotation}" 
+                                       oninput="updateElementProp('${elem.id}', 'rotation', this.value)">
+                            </div>
+                            <div class="compact-control size-control">
+                                <span class="compact-label">Color</span>
+                                <input type="color" value="${elem.color}" 
+                                       onchange="updateElementProp('${elem.id}', 'color', this.value)">
+                            </div>
+                        </div>
+                        ` : ''}
+                    `;
+                    group.appendChild(card);
+                });
+                
+                container.appendChild(group);
+            });
+        }
+
+        function drawCanvas() {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            
+            ctx.strokeStyle = '#F3F4F6';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= CANVAS_SIZE; i += GRID_SIZE * 4) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, CANVAS_SIZE);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(CANVAS_SIZE, i);
+                ctx.stroke();
+            }
+            
+            allElements.forEach(elem => elem.draw(ctx));
+        }
+
+        function getVisibleElements() {
+            return allElements.filter(e => e.visible);
+        }
+
+        function showArrowsTemporarily() {
+            showArrows = true;
+            drawCanvas();
+            
+            // Clear existing timer
+            if (arrowTimer) {
+                clearTimeout(arrowTimer);
+            }
+            
+            // Hide arrows after 3 seconds
+            arrowTimer = setTimeout(() => {
+                showArrows = false;
+                drawCanvas();
+            }, 3000);
+        }
+
+        function applyOrderMode(mode) {
+            const visible = getVisibleElements();
+            if (visible.length === 0) return;
+
+            switch(mode) {
+                case 'shape': applyShapeGrouping(visible); break;
+                case 'size': applySizeUniformity(visible); break;
+                case 'grid': applyStrictGrid(visible); break;
+                case 'hierarchy': applyVisualWeightHierarchy(visible); break;
+                case 'rhythm': applyRhythmicSpacing(visible); break;
+                case 'proximity': applyProximityClustering(visible); break;
+                case 'balance': applyAdvancedBalance(visible); break;
+                case 'rotation': 
+                    applyRotationalAlignment(visible);
+                    showArrowsTemporarily();
+                    break;
+                case 'avgface': 
+                    applyAverageFaceDirection(visible);
+                    showArrowsTemporarily();
+                    break;
+                case 'symmetry': applyBilateralSymmetry(visible); break;
+                case 'color': applyColorHarmony(visible); break;
+                case 'radial': applyRadialDistribution(visible); break;
+            }
+
+            buildElementControls();
+            drawCanvas();
+            analyzeOrder();
+        }
+
+        function applyShapeGrouping(elements) {
+            const groups = {};
+            SHAPE_TYPES.forEach(type => {
+                groups[type] = elements.filter(e => e.type === type);
+            });
+
+            const positions = [
+                {x: 125, y: 125},
+                {x: 375, y: 125},
+                {x: 125, y: 375},
+                {x: 375, y: 375}
+            ];
+
+            let posIndex = 0;
+            SHAPE_TYPES.forEach(type => {
+                if (groups[type].length > 0 && posIndex < positions.length) {
+                    const basePos = positions[posIndex];
+                    const radius = 40;
+                    
+                    groups[type].forEach((elem, i) => {
+                        const angle = (i / groups[type].length) * Math.PI * 2;
+                        elem.x = basePos.x + Math.cos(angle) * radius;
+                        elem.y = basePos.y + Math.sin(angle) * radius;
+                    });
+                    posIndex++;
+                }
+            });
+        }
+
+        function applySizeUniformity(elements) {
+            const avgSize = elements.reduce((sum, e) => sum + e.size, 0) / elements.length;
+            const gridSize = Math.round(avgSize / GRID_SIZE) * GRID_SIZE;
+            
+            elements.forEach(elem => {
+                elem.size = gridSize;
+                if (elem.type === 'rectangle') {
+                    elem.size2 = gridSize * 1.5;
+                }
+            });
+        }
+
+        function applyStrictGrid(elements) {
+            elements.forEach(elem => {
+                elem.x = Math.round(elem.x / GRID_SIZE) * GRID_SIZE;
+                elem.y = Math.round(elem.y / GRID_SIZE) * GRID_SIZE;
+                elem.size = Math.round(elem.size / GRID_SIZE) * GRID_SIZE;
+                elem.rotation = Math.round(elem.rotation / 15) * 15;
+                
+                if (elem.type === 'rectangle') {
+                    elem.size2 = Math.round(elem.size2 / GRID_SIZE) * GRID_SIZE;
+                }
+                
+                const padding = elem.size / 2 + GRID_SIZE;
+                elem.x = Math.max(padding, Math.min(CANVAS_SIZE - padding, elem.x));
+                elem.y = Math.max(padding, Math.min(CANVAS_SIZE - padding, elem.y));
+            });
+        }
+
+        function applyVisualWeightHierarchy(elements) {
+            const sorted = [...elements].sort((a, b) => b.getVisualWeight() - a.getVisualWeight());
+            
+            sorted.forEach((elem, i) => {
+                elem.size = 120 / Math.pow(PHI, i * 0.6);
+                if (elem.type === 'rectangle') {
+                    elem.size2 = elem.size * PHI;
+                }
+            });
+
+            if (sorted.length > 0) {
+                sorted[0].x = CANVAS_SIZE / 2;
+                sorted[0].y = CANVAS_SIZE / 2;
+            }
+
+            for (let i = 1; i < sorted.length; i++) {
+                const angle = (i / (sorted.length - 1)) * Math.PI * 2;
+                const radius = 160;
+                sorted[i].x = CANVAS_SIZE / 2 + Math.cos(angle) * radius;
+                sorted[i].y = CANVAS_SIZE / 2 + Math.sin(angle) * radius;
+            }
+        }
+
+        function applyRhythmicSpacing(elements) {
+            const sorted = [...elements].sort((a, b) => a.x - b.x);
+            const spacing = CANVAS_SIZE / (sorted.length + 1);
+            
+            sorted.forEach((elem, i) => {
+                elem.x = spacing * (i + 1);
+                elem.y = CANVAS_SIZE / 2;
+                elem.size = i % 2 === 0 ? 70 : 50;
+                elem.rotation = 0;
+                
+                if (elem.type === 'rectangle') {
+                    elem.size2 = elem.size * 1.5;
+                }
+            });
+        }
+
+        function applyProximityClustering(elements) {
+            for (let pass = 0; pass < 10; pass++) {
+                elements.forEach(elem => {
+                    let nearestDist = Infinity;
+                    let nearest = null;
+                    
+                    elements.forEach(other => {
+                        if (elem !== other) {
+                            const dist = Math.sqrt((elem.x - other.x)**2 + (elem.y - other.y)**2);
+                            if (dist < nearestDist) {
+                                nearestDist = dist;
+                                nearest = other;
+                            }
+                        }
+                    });
+                    
+                    if (nearest) {
+                        const minDist = (elem.size + nearest.size) / 2 + 10;
+                        if (nearestDist > minDist) {
+                            elem.x += (nearest.x - elem.x) * 0.3;
+                            elem.y += (nearest.y - elem.y) * 0.3;
+                        }
+                    }
+                });
+            }
+        }
+
+        function applyAdvancedBalance(elements) {
+            let weightedX = 0, weightedY = 0, totalWeight = 0;
+            
+            elements.forEach(e => {
+                const rgb = e.hexToRgb(e.color);
+                const L = Math.pow(0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b, 1/2.2) / 255;
+                const weight = e.getArea() * L;
+                
+                weightedX += e.x * weight;
+                weightedY += e.y * weight;
+                totalWeight += weight;
+            });
+
+            if (totalWeight > 0) {
+                const centerX = weightedX / totalWeight;
+                const centerY = weightedY / totalWeight;
+                const offsetX = (CANVAS_SIZE / 2) - centerX;
+                const offsetY = (CANVAS_SIZE / 2) - centerY;
+
+                elements.forEach(elem => {
+                    elem.x += offsetX;
+                    elem.y += offsetY;
+
+                    const padding = elem.size / 2 + 20;
+                    elem.x = Math.max(padding, Math.min(CANVAS_SIZE - padding, elem.x));
+                    elem.y = Math.max(padding, Math.min(CANVAS_SIZE - padding, elem.y));
+                });
+            }
+        }
+
+        function applyRotationalAlignment(elements) {
+            const sinSum = elements.reduce((sum, e) => sum + Math.sin(e.rotation * Math.PI / 180), 0);
+            const cosSum = elements.reduce((sum, e) => sum + Math.cos(e.rotation * Math.PI / 180), 0);
+            const avgRotation = Math.atan2(sinSum, cosSum) * 180 / Math.PI;
+            
+            elements.forEach(elem => {
+                elem.rotation = avgRotation;
+            });
+        }
+
+        function applyAverageFaceDirection(elements) {
+            // Quantize rotations to 8 cardinal directions (0, 45, 90, 135, 180, 225, 270, 315)
+            const cardinalDirections = elements.map(e => {
+                return Math.round(e.rotation / 45) * 45;
+            });
+            
+            // Find the most common direction (mode)
+            const directionCounts = {};
+            cardinalDirections.forEach(dir => {
+                const normalized = ((dir % 360) + 360) % 360; // Normalize to 0-360
+                directionCounts[normalized] = (directionCounts[normalized] || 0) + 1;
+            });
+            
+            // Get the most frequent direction
+            let mostCommonDirection = 0;
+            let maxCount = 0;
+            for (const [dir, count] of Object.entries(directionCounts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    mostCommonDirection = parseInt(dir);
+                }
+            }
+            
+            // Align all elements to the most common direction
+            elements.forEach(elem => {
+                elem.rotation = mostCommonDirection;
+            });
+        }
+
+        function applyBilateralSymmetry(elements) {
+            const centerX = CANVAS_SIZE / 2;
+            const sorted = [...elements].sort((a, b) => Math.abs(a.x - centerX) - Math.abs(b.x - centerX));
+
+            for (let i = 0; i < sorted.length; i += 2) {
+                const elem1 = sorted[i];
+                const offsetX = Math.abs(elem1.x - centerX);
+                
+                elem1.x = centerX - offsetX;
+                elem1.rotation = -elem1.rotation;
+                
+                if (i + 1 < sorted.length) {
+                    const elem2 = sorted[i + 1];
+                    elem2.x = centerX + offsetX;
+                    elem2.y = elem1.y;
+                    elem2.size = elem1.size;
+                    elem2.size2 = elem1.size2;
+                    elem2.rotation = elem1.rotation;
+                }
+            }
+        }
+
+        function applyColorHarmony(elements) {
+            const avgHue = elements.reduce((sum, e) => {
+                const rgb = e.hexToRgb(e.color);
+                const hsl = e.rgbToHsl(rgb.r, rgb.g, rgb.b);
+                return sum + hsl.h;
+            }, 0) / elements.length;
+            
+            elements.forEach((elem, i) => {
+                let hue;
+                if (elements.length <= 4) {
+                    hue = i % 2 === 0 ? avgHue : (avgHue + 180) % 360;
+                } else {
+                    hue = avgHue + (i - elements.length / 2) * (60 / elements.length);
+                }
+                
+                const lightness = 45 + (i * 5);
+                elem.color = `hsl(${hue % 360}, 70%, ${lightness}%)`;
+                elem.filled = true;
+            });
+        }
+
+        function applyRadialDistribution(elements) {
+            const centerX = CANVAS_SIZE / 2;
+            const centerY = CANVAS_SIZE / 2;
+            const radius = 150;
+            
+            elements.forEach((elem, i) => {
+                const angle = (i / elements.length) * Math.PI * 2;
+                elem.x = centerX + Math.cos(angle) * radius;
+                elem.y = centerY + Math.sin(angle) * radius;
+                elem.rotation = angle * 180 / Math.PI + 90;
+            });
+        }
+
+        function analyzeOrder() {
+            const visible = getVisibleElements();
+            if (visible.length === 0) {
+                updateScoreDisplay(0, 0, 0, 0, 0, 0, 0);
+                return;
+            }
+
+            const hierarchyScore = analyzeHierarchy(visible);
+            const groupingScore = analyzeGrouping(visible);
+            const structureScore = analyzeStructure(visible);
+            const flowScore = analyzeFlow(visible);
+            const spatialScore = analyzeSpatial(visible);
+            const harmonyScore = analyzeHarmony(visible);
+
+            const overallScore = (
+                hierarchyScore * 0.20 +
+                groupingScore * 0.18 +
+                structureScore * 0.16 +
+                flowScore * 0.15 +
+                spatialScore * 0.12 +
+                harmonyScore * 0.19
+            ) * 10;
+
+            updateScoreDisplay(overallScore, hierarchyScore, groupingScore, structureScore, flowScore, spatialScore, harmonyScore);
+        }
+
+        function analyzeHierarchy(elements) {
+            const weights = elements.map(e => e.getVisualWeight());
+            if (weights.length < 2) return 5.0;
+
+            const uniqueWeights = new Set(weights.map(w => Math.round(w * 10) / 10)).size;
+            const range = Math.max(...weights) - Math.min(...weights);
+            const avgWeight = weights.reduce((a, b) => a + b) / weights.length;
+            const variance = weights.reduce((sum, w) => sum + (w - avgWeight)**2, 0) / weights.length;
+
+            return Math.min(10, uniqueWeights * 2 + range * 5 + Math.sqrt(variance) * 3);
+        }
+
+        function analyzeGrouping(elements) {
+            if (elements.length < 2) return 10.0;
+            
+            const distances = [];
+            for (let i = 0; i < elements.length; i++) {
+                for (let j = i + 1; j < elements.length; j++) {
+                    const dist = Math.sqrt((elements[i].x - elements[j].x)**2 + (elements[i].y - elements[j].y)**2);
+                    distances.push(dist);
+                }
+            }
+
+            const avgDist = distances.reduce((a, b) => a + b) / distances.length;
+            const stdDev = Math.sqrt(distances.reduce((sum, d) => sum + (d - avgDist)**2, 0) / distances.length);
+
+            return Math.min(10, (stdDev / avgDist) * 15);
+        }
+
+        function analyzeStructure(elements) {
+            const xPositions = elements.map(e => e.x);
+            const yPositions = elements.map(e => e.y);
+            
+            const xGridScore = xPositions.filter(x => Math.abs(x % GRID_SIZE) < 2).length / xPositions.length;
+            const yGridScore = yPositions.filter(y => Math.abs(y % GRID_SIZE) < 2).length / yPositions.length;
+            
+            const sizes = elements.map(e => e.size);
+            const avgSize = sizes.reduce((a, b) => a + b) / sizes.length;
+            const sizeVariance = sizes.reduce((sum, s) => sum + (s - avgSize)**2, 0) / sizes.length;
+            const sizeConsistency = 1 - Math.min(1, Math.sqrt(sizeVariance) / avgSize);
+            
+            const rotations = elements.map(e => e.rotation);
+            const rotationAlignment = rotations.filter(r => r % 15 < 2).length / rotations.length;
+
+            return ((xGridScore + yGridScore) * 4 + sizeConsistency * 4 + rotationAlignment * 2) / 1.5;
+        }
+
+        function analyzeFlow(elements) {
+            if (elements.length < 2) return 10.0;
+
+            const sorted = [...elements].sort((a, b) => b.getVisualWeight() - a.getVisualWeight());
+            
+            let score = 0;
+            for (let i = 0; i < sorted.length - 1; i++) {
+                const xDiff = sorted[i + 1].x - sorted[i].x;
+                const yDiff = sorted[i + 1].y - sorted[i].y;
+                
+                if (xDiff >= 0 && yDiff >= 0) score += 1;
+                else if (Math.abs(yDiff) < Math.abs(xDiff) && xDiff > 0) score += 0.7;
+                else if (Math.abs(xDiff) < Math.abs(yDiff) && yDiff > 0) score += 0.6;
+                else score += 0.3;
+            }
+            
+            return (score / (sorted.length - 1)) * 10;
+        }
+
+        function analyzeSpatial(elements) {
+            const totalArea = CANVAS_SIZE * CANVAS_SIZE;
+            const occupiedArea = elements.reduce((sum, e) => sum + e.getArea(), 0);
+            const whiteSpaceRatio = (totalArea - occupiedArea) / totalArea;
+            
+            const whiteSpaceScore = 10 - Math.abs(whiteSpaceRatio - 0.4) * 15;
+            
+            let weightedX = 0, weightedY = 0, totalWeight = 0;
+            elements.forEach(e => {
+                const rgb = e.hexToRgb(e.color);
+                const L = Math.pow(0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b, 1/2.2) / 255;
+                const weight = e.getArea() * L;
+                weightedX += e.x * weight;
+                weightedY += e.y * weight;
+                totalWeight += weight;
+            });
+            
+            const centerX = totalWeight > 0 ? weightedX / totalWeight : CANVAS_SIZE / 2;
+            const centerY = totalWeight > 0 ? weightedY / totalWeight : CANVAS_SIZE / 2;
+            
+            const deviation = Math.sqrt((centerX - CANVAS_SIZE/2)**2 + (centerY - CANVAS_SIZE/2)**2);
+            const balanceScore = 10 - (deviation / (CANVAS_SIZE/2)) * 5;
+            
+            return (Math.max(0, whiteSpaceScore) + Math.max(0, balanceScore)) / 2;
+        }
+
+        function analyzeHarmony(elements) {
+            const sizes = elements.map(e => e.size);
+            const avgSize = sizes.reduce((a, b) => a + b, 0) / sizes.length;
+            const sizeVariance = sizes.reduce((sum, s) => sum + (s - avgSize)**2, 0) / sizes.length;
+            const sizeDiversity = Math.sqrt(sizeVariance) / avgSize;
+            
+            const rotations = elements.map(e => e.rotation);
+            const avgRotation = rotations.reduce((a, b) => a + b) / rotations.length;
+            const rotationVariance = rotations.reduce((sum, r) => sum + (r - avgRotation)**2, 0) / rotations.length;
+            const rotationConsistency = 1 - Math.min(1, Math.sqrt(rotationVariance) / 180);
+            
+            const filledCount = elements.filter(e => e.filled).length;
+            const filledRatio = filledCount / elements.length;
+            const filledConsistency = Math.min(filledRatio, 1 - filledRatio) * 2;
+
+            const sizeScore = Math.max(0, 10 - Math.abs(sizeDiversity - 0.3) * 20);
+            const rotationScore = rotationConsistency * 10;
+            const filledScore = filledConsistency * 10;
+
+            return (sizeScore * 0.5 + rotationScore * 0.3 + filledScore * 0.2);
+        }
+
+        function updateScoreDisplay(overall, hierarchy, grouping, structure, flow, spatial, harmony) {
+            document.getElementById('overallScore').textContent = Math.round(overall) + '%';
+            
+            let category;
+            if (overall >= 90) category = '🏆 Excellent Order';
+            else if (overall >= 80) category = '⭐ Very Good Order';
+            else if (overall >= 70) category = '✓ Good Order';
+            else if (overall >= 60) category = '~ Fair Order';
+            else category = '✗ Needs Improvement';
+            document.getElementById('scoreCategory').textContent = category;
+            
+            updatePrincipleScore('hierarchy', hierarchy);
+            updatePrincipleScore('grouping', grouping);
+            updatePrincipleScore('structure', structure);
+            updatePrincipleScore('flow', flow);
+            updatePrincipleScore('spatial', spatial);
+            updatePrincipleScore('harmony', harmony);
+        }
+
+        function updatePrincipleScore(principle, score) {
+            const scoreElem = document.getElementById(principle + 'Score');
+            const barElem = document.getElementById(principle + 'Bar');
+            
+            scoreElem.textContent = score.toFixed(1) + '/10';
+            barElem.style.width = (score * 10) + '%';
+            
+            if (score >= 8) barElem.style.background = '#10B981';
+            else if (score >= 6) barElem.style.background = '#F59E0B';
+            else barElem.style.background = '#EF4444';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

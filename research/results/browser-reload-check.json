@@ -1,0 +1,53 @@
+{
+  "check": "real browser reload recovery",
+  "date": "2026-09-13",
+  "method": "research/harness/index.html served over http://localhost:8752 (python -m http.server via .claude/launch.json); driven with real UI clicks and genuine location.reload() calls, not a simulated restore",
+  "runtime": "Chromium (in-app browser pane)",
+  "persistence": "LocalStorageAdapter, prefix order-research/, key session/harness",
+  "cross_runtime_determinism": {
+    "note": "fresh session in the browser produced the same stateId as the Node demo",
+    "browser_initial_stateId": "cd813277",
+    "node_initial_stateId": "cd813277",
+    "match": true
+  },
+  "case_1_reload_after_edits": {
+    "actions": ["apply strict-grid", "apply size-uniformity", "apply radial-distribution", "undo", "RELOAD"],
+    "before": {
+      "stateId": "be6cffff", "historyLength": 4, "cursor": 2,
+      "canUndo": true, "canRedo": true, "eventCount": 4, "lastSeq": 3,
+      "scoreTotal": 66.79022310744497,
+      "historyIds": ["cd813277", "48fe0deb", "be6cffff", "cadb2c61"]
+    },
+    "after": {
+      "stateId": "be6cffff", "historyLength": 4, "cursor": 2,
+      "canUndo": true, "canRedo": true, "eventCount": 4, "lastSeq": 3,
+      "scoreTotal": 66.79022310744497,
+      "historyIds": ["cd813277", "48fe0deb", "be6cffff", "cadb2c61"],
+      "restoredFromStorage": true
+    },
+    "differingKeys": [],
+    "redoBranchSurvived": true,
+    "scoreExactMatch": true
+  },
+  "case_2_continuation_after_reload": {
+    "action": "redo",
+    "stateId": "cadb2c61", "cursor": 3, "canRedo": false,
+    "eventCount": 5, "lastSeq": 4,
+    "sequenceNumberingContinued": true,
+    "note": "numbering continued from 3 to 4 rather than restarting at 0"
+  },
+  "case_3_pending_preview_across_reload": {
+    "actions": ["preview radial-distribution", "RELOAD"],
+    "beforeReload_hadPendingPreview": true,
+    "afterReload_hasPendingPreview": false,
+    "committedStateUnchanged": true,
+    "eventsRetained": true,
+    "lastEventTypes": ["history.undo", "history.redo", "preview.requested"],
+    "note": "the preview.requested event is retained because the log is append-only and the request genuinely occurred; the uncommitted preview itself is correctly not restored"
+  },
+  "limitations": [
+    "One browser engine (Chromium). Not tested on Firefox or Safari.",
+    "Storage-unavailable paths (private windows, blocked site data, quota exhaustion) are guarded in code but not exercised here.",
+    "This is a development harness, not a participant workflow: no consent, no conditions, no pseudonymous IDs."
+  ]
+}

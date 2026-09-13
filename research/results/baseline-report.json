@@ -1,0 +1,194 @@
+{
+  "generatedAt": "2026-09-13T14:09:07.552Z",
+  "provenance": {
+    "modelVersion": "v0-as-shipped",
+    "configVersion": "v0-config-1",
+    "generatorVersion": "generate-1",
+    "rngAlgorithm": "mulberry32",
+    "rngVersion": "rng-1",
+    "seedRange": [
+      1,
+      2000
+    ],
+    "generatorParams": {
+      "perType": 4,
+      "visibleProbability": 0.6,
+      "x": [
+        100,
+        400
+      ],
+      "y": [
+        100,
+        400
+      ],
+      "size": [
+        40,
+        120
+      ],
+      "rectangleAspect": 1.5,
+      "rotation": [
+        0,
+        359
+      ],
+      "filledProbability": 0.8,
+      "palette": [
+        "#1F2937",
+        "#374151",
+        "#4B5563",
+        "#6B7280",
+        "#DC2626",
+        "#EA580C",
+        "#D97706",
+        "#65A30D"
+      ]
+    },
+    "equivalenceTested": "test/equivalence.test.mjs — exact match vs original JS at bf617e4"
+  },
+  "caveats": [
+    "Describes v0 over this generator only. Not comparable to manuscript Study 1/2/3 means.",
+    "Empty layouts are EXCLUDED and counted, never recorded as zero.",
+    "Invalid (NaN) results are counted and flagged, never replaced."
+  ],
+  "conditionA_generatorRanges": {
+    "requested": 2000,
+    "scored": 2000,
+    "excludedEmpty": 0,
+    "invalid": 0,
+    "total": {
+      "n": 2000,
+      "mean": 60.7851,
+      "sd": 4.0516,
+      "min": 41.7606,
+      "p05": 53.5412,
+      "p50": 61.254,
+      "p95": 66.8264,
+      "max": 74.2055
+    },
+    "dimensions": {
+      "hierarchy": {
+        "n": 2000,
+        "mean": 6.7802,
+        "sd": 1.3045,
+        "min": 2.2435,
+        "p05": 4.6466,
+        "p50": 7.1589,
+        "p95": 9.399,
+        "max": 10
+      },
+      "grouping": {
+        "n": 2000,
+        "mean": 6.8087,
+        "sd": 0.7282,
+        "min": 0,
+        "p05": 5.7652,
+        "p50": 6.7422,
+        "p95": 8.0459,
+        "max": 10
+      },
+      "structure": {
+        "n": 2000,
+        "mean": 3.451,
+        "sd": 0.5711,
+        "min": 1.7387,
+        "p05": 2.5422,
+        "p50": 3.4268,
+        "p95": 4.4354,
+        "max": 5.5026
+      },
+      "flow": {
+        "n": 2000,
+        "mean": 5.6375,
+        "sd": 0.6358,
+        "min": 3,
+        "p05": 4.6667,
+        "p50": 5.625,
+        "p95": 6.625,
+        "max": 8.6667
+      },
+      "spatial": {
+        "n": 2000,
+        "mean": 6.8987,
+        "sd": 0.6187,
+        "min": 4.7386,
+        "p05": 5.8967,
+        "p50": 6.889,
+        "p95": 7.9353,
+        "max": 9.0544
+      },
+      "harmony": {
+        "n": 2000,
+        "mean": 6.691,
+        "sd": 0.7016,
+        "min": 3.6327,
+        "p05": 5.5604,
+        "p50": 6.682,
+        "p95": 7.8314,
+        "max": 8.9813
+      }
+    }
+  },
+  "conditionB_matchedRandomPosition": {
+    "baselineVersion": "baseline-2",
+    "correction": "baseline-2 samples each element from the SAME per-element region the preset clamps to (size/2 + gridSize). baseline-1 drew from the full canvas, so the two conditions differed in the SUPPORT of their position distributions, not only in arrangement. baseline-1 figures are retained below for comparison and are NOT interchangeable with baseline-2 figures.",
+    "baseline1_retained": {
+      "note": "Previous diagnostic output, preserved. Superseded by baseline-2.",
+      "delta": {
+        "n": 2000,
+        "mean": 5.1694,
+        "sd": 4.0529,
+        "min": -9.9172,
+        "p05": -0.9153,
+        "p50": 4.958,
+        "p95": 12.2123,
+        "max": 21.0349
+      },
+      "reversals": 174
+    },
+    "n": 2000,
+    "randomizedAttributes": [
+      "x",
+      "y"
+    ],
+    "preservedAttributes": [
+      "inventory",
+      "type",
+      "visible",
+      "size",
+      "size2",
+      "rotation",
+      "color",
+      "filled",
+      "order"
+    ],
+    "structuredTotal": {
+      "n": 2000,
+      "mean": 69.0584,
+      "sd": 3.9392,
+      "min": 50.447,
+      "p05": 61.9944,
+      "p50": 69.6002,
+      "p95": 75.1526,
+      "max": 81.8553
+    },
+    "randomPositionTotal": {
+      "n": 2000,
+      "mean": 63.7342,
+      "sd": 4.2726,
+      "min": 47.4813,
+      "p05": 56.4311,
+      "p50": 63.7235,
+      "p95": 70.4729,
+      "max": 75.1852
+    },
+    "delta": {
+      "n": 2000,
+      "mean": 5.3242,
+      "sd": 3.8212,
+      "min": -9.707,
+      "p05": -0.4917,
+      "p50": 5.3024,
+      "p95": 11.9306,
+      "max": 18.4
+    }
+  }
+}

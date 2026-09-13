@@ -1,0 +1,6 @@
+# Participant response exports must NEVER be committed.
+*rating-export*.json
+*order-rating-*.json
+responses/
+joined*.json
+joined*.csv

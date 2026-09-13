@@ -1,0 +1,857 @@
+[
+  {
+    "seed": 1,
+    "stateId": "f39b4931",
+    "layout": {
+      "schemaVersion": "layout-1",
+      "id": "gen-1",
+      "canvas": {
+        "width": 500,
+        "height": 500,
+        "background": "#FFFFFF"
+      },
+      "renderer": {
+        "gridOverlay": true,
+        "gridSize": 8,
+        "showArrows": false
+      },
+      "elements": [
+        {
+          "id": "circle-1",
+          "type": "circle",
+          "index": 1,
+          "order": 0,
+          "visible": false,
+          "x": 100.82071635406464,
+          "y": 258.23411198798567,
+          "size": 118.48407739773393,
+          "size2": 118.48407739773393,
+          "rotation": 348,
+          "color": "#4B5563",
+          "filled": true
+        },
+        {
+          "id": "circle-2",
+          "type": "circle",
+          "index": 2,
+          "order": 1,
+          "visible": false,
+          "x": 227.7390856295824,
+          "y": 398.446883703582,
+          "size": 76.42169017344713,
+          "size2": 76.42169017344713,
+          "rotation": 175,
+          "color": "#374151",
+          "filled": true
+        },
+        {
+          "id": "circle-3",
+          "type": "circle",
+          "index": 3,
+          "order": 2,
+          "visible": true,
+          "x": 146.34794048033655,
+          "y": 246.74316863529384,
+          "size": 45.38959067314863,
+          "size2": 45.38959067314863,
+          "rotation": 142,
+          "color": "#D97706",
+          "filled": true
+        },
+        {
+          "id": "circle-4",
+          "type": "circle",
+          "index": 4,
+          "order": 3,
+          "visible": true,
+          "x": 112.81891299877316,
+          "y": 228.21458673570305,
+          "size": 87.23059946671128,
+          "size2": 87.23059946671128,
+          "rotation": 287,
+          "color": "#4B5563",
+          "filled": true
+        },
+        {
+          "id": "square-1",
+          "type": "square",
+          "index": 1,
+          "order": 4,
+          "visible": false,
+          "x": 263.8247084803879,
+          "y": 327.5328521616757,
+          "size": 55.42512249201536,
+          "size2": 55.42512249201536,
+          "rotation": 259,
+          "color": "#6B7280",
+          "filled": true
+        },
+        {
+          "id": "square-2",
+          "type": "square",
+          "index": 2,
+          "order": 5,
+          "visible": false,
+          "x": 171.79999696090817,
+          "y": 327.1003882167861,
+          "size": 52.26167535409331,
+          "size2": 52.26167535409331,
+          "rotation": 116,
+          "color": "#6B7280",
+          "filled": true
+        },
+        {
+          "id": "square-3",
+          "type": "square",
+          "index": 3,
+          "order": 6,
+          "visible": true,
+          "x": 317.83144869841635,
+          "y": 272.90243464522064,
+          "size": 50.17686976119876,
+          "size2": 50.17686976119876,
+          "rotation": 95,
+          "color": "#1F2937",
+          "filled": true
+        },
+        {
+          "id": "square-4",
+          "type": "square",
+          "index": 4,
+          "order": 7,
+          "visible": false,
+          "x": 171.5482617262751,
+          "y": 396.8132463749498,
+          "size": 97.46440986171365,
+          "size2": 97.46440986171365,
+          "rotation": 144,
+          "color": "#4B5563",
+          "filled": true
+        },
+        {
+          "id": "rectangle-1",
+          "type": "rectangle",
+          "index": 1,
+          "order": 8,
+          "visible": false,
+          "x": 376.9993537571281,
+          "y": 307.82313235104084,
+          "size": 113.51070197299123,
+          "size2": 170.26605295948684,
+          "rotation": 300,
+          "color": "#65A30D",
+          "filled": true
+        },
+        {
+          "id": "rectangle-2",
+          "type": "rectangle",
+          "index": 2,
+          "order": 9,
+          "visible": true,
+          "x": 360.6058436213061,
+          "y": 188.34277705755085,
+          "size": 110.49812247976661,
+          "size2": 165.7471837196499,
+          "rotation": 183,
+          "color": "#65A30D",
+          "filled": true
+        },
+        {
+          "id": "rectangle-3",
+          "type": "rectangle",
+          "index": 3,
+          "order": 10,
+          "visible": true,
+          "x": 303.04270156193525,
+          "y": 384.6643645549193,
+          "size": 50.553646609187126,
+          "size2": 75.83046991378069,
+          "rotation": 352,
+          "color": "#374151",
+          "filled": true
+        },
+        {
+          "id": "rectangle-4",
+          "type": "rectangle",
+          "index": 4,
+          "order": 11,
+          "visible": true,
+          "x": 220.372774428688,
+          "y": 197.2974768606946,
+          "size": 92.60411752387881,
+          "size2": 138.90617628581822,
+          "rotation": 183,
+          "color": "#DC2626",
+          "filled": true
+        },
+        {
+          "id": "triangle-1",
+          "type": "triangle",
+          "index": 1,
+          "order": 12,
+          "visible": false,
+          "x": 356.27160898875445,
+          "y": 181.83596339076757,
+          "size": 53.141517620533705,
+          "size2": 53.141517620533705,
+          "rotation": 109,
+          "color": "#65A30D",
+          "filled": true
+        },
+        {
+          "id": "triangle-2",
+          "type": "triangle",
+          "index": 2,
+          "order": 13,
+          "visible": true,
+          "x": 296.3729702401906,
+          "y": 264.7182669257745,
+          "size": 65.96936725080013,
+          "size2": 65.96936725080013,
+          "rotation": 43,
+          "color": "#374151",
+          "filled": true
+        },
+        {
+          "id": "triangle-3",
+          "type": "triangle",
+          "index": 3,
+          "order": 14,
+          "visible": true,
+          "x": 302.6824016822502,
+          "y": 295.43303346727043,
+          "size": 49.34709193184972,
+          "size2": 49.34709193184972,
+          "rotation": 182,
+          "color": "#DC2626",
+          "filled": true
+        },
+        {
+          "id": "triangle-4",
+          "type": "triangle",
+          "index": 4,
+          "order": 15,
+          "visible": false,
+          "x": 175.70249408017844,
+          "y": 397.4961559288204,
+          "size": 116.32066378369927,
+          "size2": 116.32066378369927,
+          "rotation": 313,
+          "color": "#1F2937",
+          "filled": true
+        }
+      ],
+      "meta": {
+        "generator": {
+          "version": "generate-1",
+          "seed": 1,
+          "seedInput": 1,
+          "rngAlgorithm": "mulberry32",
+          "rngVersion": "rng-1",
+          "params": {
+            "perType": 4,
+            "visibleProbability": 0.6,
+            "x": [
+              100,
+              400
+            ],
+            "y": [
+              100,
+              400
+            ],
+            "size": [
+              40,
+              120
+            ],
+            "rectangleAspect": 1.5,
+            "rotation": [
+              0,
+              359
+            ],
+            "filledProbability": 0.8,
+            "palette": [
+              "#1F2937",
+              "#374151",
+              "#4B5563",
+              "#6B7280",
+              "#DC2626",
+              "#EA580C",
+              "#D97706",
+              "#65A30D"
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "seed": 2,
+    "stateId": "099cc57c",
+    "layout": {
+      "schemaVersion": "layout-1",
+      "id": "gen-2",
+      "canvas": {
+        "width": 500,
+        "height": 500,
+        "background": "#FFFFFF"
+      },
+      "renderer": {
+        "gridOverlay": true,
+        "gridSize": 8,
+        "showArrows": false
+      },
+      "elements": [
+        {
+          "id": "circle-1",
+          "type": "circle",
+          "index": 1,
+          "order": 0,
+          "visible": false,
+          "x": 197.49952969141304,
+          "y": 185.58881657663733,
+          "size": 83.03641259670258,
+          "size2": 83.03641259670258,
+          "rotation": 315,
+          "color": "#EA580C",
+          "filled": true
+        },
+        {
+          "id": "circle-2",
+          "type": "circle",
+          "index": 2,
+          "order": 1,
+          "visible": true,
+          "x": 334.47667171712965,
+          "y": 134.20951711013913,
+          "size": 102.86935916170478,
+          "size2": 102.86935916170478,
+          "rotation": 72,
+          "color": "#6B7280",
+          "filled": false
+        },
+        {
+          "id": "circle-3",
+          "type": "circle",
+          "index": 3,
+          "order": 2,
+          "visible": true,
+          "x": 142.30200964957476,
+          "y": 301.6681686975062,
+          "size": 69.33586150407791,
+          "size2": 69.33586150407791,
+          "rotation": 349,
+          "color": "#1F2937",
+          "filled": false
+        },
+        {
+          "id": "circle-4",
+          "type": "circle",
+          "index": 4,
+          "order": 3,
+          "visible": true,
+          "x": 138.4073422057554,
+          "y": 157.58008635602891,
+          "size": 40.56844510138035,
+          "size2": 40.56844510138035,
+          "rotation": 338,
+          "color": "#6B7280",
+          "filled": true
+        },
+        {
+          "id": "square-1",
+          "type": "square",
+          "index": 1,
+          "order": 4,
+          "visible": false,
+          "x": 169.8398079490289,
+          "y": 240.38891000673175,
+          "size": 67.85932617262006,
+          "size2": 67.85932617262006,
+          "rotation": 18,
+          "color": "#DC2626",
+          "filled": true
+        },
+        {
+          "id": "square-2",
+          "type": "square",
+          "index": 2,
+          "order": 5,
+          "visible": true,
+          "x": 388.0878249416128,
+          "y": 341.50800874922425,
+          "size": 40.050089694559574,
+          "size2": 40.050089694559574,
+          "rotation": 353,
+          "color": "#1F2937",
+          "filled": false
+        },
+        {
+          "id": "square-3",
+          "type": "square",
+          "index": 3,
+          "order": 6,
+          "visible": true,
+          "x": 158.4275648696348,
+          "y": 303.36762729566544,
+          "size": 44.1182884760201,
+          "size2": 44.1182884760201,
+          "rotation": 280,
+          "color": "#65A30D",
+          "filled": false
+        },
+        {
+          "id": "square-4",
+          "type": "square",
+          "index": 4,
+          "order": 7,
+          "visible": true,
+          "x": 384.65154219884425,
+          "y": 121.34440375957638,
+          "size": 97.12776100263,
+          "size2": 97.12776100263,
+          "rotation": 352,
+          "color": "#D97706",
+          "filled": true
+        },
+        {
+          "id": "rectangle-1",
+          "type": "rectangle",
+          "index": 1,
+          "order": 8,
+          "visible": true,
+          "x": 109.94064644910395,
+          "y": 354.6324106166139,
+          "size": 107.10660120472312,
+          "size2": 160.65990180708468,
+          "rotation": 197,
+          "color": "#4B5563",
+          "filled": false
+        },
+        {
+          "id": "rectangle-2",
+          "type": "rectangle",
+          "index": 2,
+          "order": 9,
+          "visible": false,
+          "x": 234.0859493240714,
+          "y": 204.78066608775407,
+          "size": 41.47584555670619,
+          "size2": 62.213768335059285,
+          "rotation": 342,
+          "color": "#4B5563",
+          "filled": true
+        },
+        {
+          "id": "rectangle-3",
+          "type": "rectangle",
+          "index": 3,
+          "order": 10,
+          "visible": false,
+          "x": 360.21308125928044,
+          "y": 375.85518003907055,
+          "size": 74.54491132870317,
+          "size2": 111.81736699305475,
+          "rotation": 74,
+          "color": "#EA580C",
+          "filled": true
+        },
+        {
+          "id": "rectangle-4",
+          "type": "rectangle",
+          "index": 4,
+          "order": 11,
+          "visible": false,
+          "x": 381.4074625726789,
+          "y": 161.54189815279096,
+          "size": 62.30765713378787,
+          "size2": 93.4614857006818,
+          "rotation": 124,
+          "color": "#DC2626",
+          "filled": true
+        },
+        {
+          "id": "triangle-1",
+          "type": "triangle",
+          "index": 1,
+          "order": 12,
+          "visible": true,
+          "x": 349.2025719722733,
+          "y": 150.1627802150324,
+          "size": 102.15767627581954,
+          "size2": 102.15767627581954,
+          "rotation": 142,
+          "color": "#6B7280",
+          "filled": true
+        },
+        {
+          "id": "triangle-2",
+          "type": "triangle",
+          "index": 2,
+          "order": 13,
+          "visible": false,
+          "x": 242.69573017954826,
+          "y": 396.85213149059564,
+          "size": 60.79483171924949,
+          "size2": 60.79483171924949,
+          "rotation": 30,
+          "color": "#EA580C",
+          "filled": true
+        },
+        {
+          "id": "triangle-3",
+          "type": "triangle",
+          "index": 3,
+          "order": 14,
+          "visible": false,
+          "x": 334.5818129135296,
+          "y": 294.24315951764584,
+          "size": 62.93122738599777,
+          "size2": 62.93122738599777,
+          "rotation": 117,
+          "color": "#EA580C",
+          "filled": true
+        },
+        {
+          "id": "triangle-4",
+          "type": "triangle",
+          "index": 4,
+          "order": 15,
+          "visible": true,
+          "x": 319.73009309731424,
+          "y": 392.64133903197944,
+          "size": 90.43755657970905,
+          "size2": 90.43755657970905,
+          "rotation": 41,
+          "color": "#DC2626",
+          "filled": false
+        }
+      ],
+      "meta": {
+        "generator": {
+          "version": "generate-1",
+          "seed": 2,
+          "seedInput": 2,
+          "rngAlgorithm": "mulberry32",
+          "rngVersion": "rng-1",
+          "params": {
+            "perType": 4,
+            "visibleProbability": 0.6,
+            "x": [
+              100,
+              400
+            ],
+            "y": [
+              100,
+              400
+            ],
+            "size": [
+              40,
+              120
+            ],
+            "rectangleAspect": 1.5,
+            "rotation": [
+              0,
+              359
+            ],
+            "filledProbability": 0.8,
+            "palette": [
+              "#1F2937",
+              "#374151",
+              "#4B5563",
+              "#6B7280",
+              "#DC2626",
+              "#EA580C",
+              "#D97706",
+              "#65A30D"
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "seed": 3,
+    "stateId": "867e7346",
+    "layout": {
+      "schemaVersion": "layout-1",
+      "id": "gen-3",
+      "canvas": {
+        "width": 500,
+        "height": 500,
+        "background": "#FFFFFF"
+      },
+      "renderer": {
+        "gridOverlay": true,
+        "gridSize": 8,
+        "showArrows": false
+      },
+      "elements": [
+        {
+          "id": "circle-1",
+          "type": "circle",
+          "index": 1,
+          "order": 0,
+          "visible": false,
+          "x": 111.59864815417677,
+          "y": 236.85765778645873,
+          "size": 45.99424077197909,
+          "size2": 45.99424077197909,
+          "rotation": 274,
+          "color": "#6B7280",
+          "filled": true
+        },
+        {
+          "id": "circle-2",
+          "type": "circle",
+          "index": 2,
+          "order": 1,
+          "visible": true,
+          "x": 178.97688050288707,
+          "y": 265.78216736670583,
+          "size": 55.59330014511943,
+          "size2": 55.59330014511943,
+          "rotation": 30,
+          "color": "#EA580C",
+          "filled": true
+        },
+        {
+          "id": "circle-3",
+          "type": "circle",
+          "index": 3,
+          "order": 2,
+          "visible": false,
+          "x": 363.93199807498604,
+          "y": 197.08709989208728,
+          "size": 95.246511567384,
+          "size2": 95.246511567384,
+          "rotation": 103,
+          "color": "#EA580C",
+          "filled": true
+        },
+        {
+          "id": "circle-4",
+          "type": "circle",
+          "index": 4,
+          "order": 3,
+          "visible": false,
+          "x": 261.9841347448528,
+          "y": 103.48178530111909,
+          "size": 110.18834931775928,
+          "size2": 110.18834931775928,
+          "rotation": 111,
+          "color": "#65A30D",
+          "filled": true
+        },
+        {
+          "id": "square-1",
+          "type": "square",
+          "index": 1,
+          "order": 4,
+          "visible": true,
+          "x": 314.40522437915206,
+          "y": 146.29958821460605,
+          "size": 69.43386288359761,
+          "size2": 69.43386288359761,
+          "rotation": 260,
+          "color": "#1F2937",
+          "filled": true
+        },
+        {
+          "id": "square-2",
+          "type": "square",
+          "index": 2,
+          "order": 5,
+          "visible": true,
+          "x": 358.9226700132713,
+          "y": 280.89148555882275,
+          "size": 94.56517925485969,
+          "size2": 94.56517925485969,
+          "rotation": 283,
+          "color": "#DC2626",
+          "filled": true
+        },
+        {
+          "id": "square-3",
+          "type": "square",
+          "index": 3,
+          "order": 6,
+          "visible": true,
+          "x": 211.68854809366167,
+          "y": 259.2792253708467,
+          "size": 107.08164442330599,
+          "size2": 107.08164442330599,
+          "rotation": 148,
+          "color": "#6B7280",
+          "filled": true
+        },
+        {
+          "id": "square-4",
+          "type": "square",
+          "index": 4,
+          "order": 7,
+          "visible": true,
+          "x": 332.82431934494525,
+          "y": 356.63333295378834,
+          "size": 93.16817663609982,
+          "size2": 93.16817663609982,
+          "rotation": 134,
+          "color": "#EA580C",
+          "filled": true
+        },
+        {
+          "id": "rectangle-1",
+          "type": "rectangle",
+          "index": 1,
+          "order": 8,
+          "visible": true,
+          "x": 393.6414353083819,
+          "y": 364.22484032809734,
+          "size": 97.00936613604426,
+          "size2": 145.5140492040664,
+          "rotation": 243,
+          "color": "#65A30D",
+          "filled": true
+        },
+        {
+          "id": "rectangle-2",
+          "type": "rectangle",
+          "index": 2,
+          "order": 9,
+          "visible": true,
+          "x": 119.84553849324584,
+          "y": 261.2778653157875,
+          "size": 109.24041902646422,
+          "size2": 163.86062853969634,
+          "rotation": 124,
+          "color": "#DC2626",
+          "filled": true
+        },
+        {
+          "id": "rectangle-3",
+          "type": "rectangle",
+          "index": 3,
+          "order": 10,
+          "visible": true,
+          "x": 265.5929723056033,
+          "y": 273.3489311533049,
+          "size": 71.288544498384,
+          "size2": 106.932816747576,
+          "rotation": 272,
+          "color": "#374151",
+          "filled": false
+        },
+        {
+          "id": "rectangle-4",
+          "type": "rectangle",
+          "index": 4,
+          "order": 11,
+          "visible": false,
+          "x": 325.19816278945655,
+          "y": 330.9939096448943,
+          "size": 44.88898951560259,
+          "size2": 67.33348427340388,
+          "rotation": 148,
+          "color": "#374151",
+          "filled": true
+        },
+        {
+          "id": "triangle-1",
+          "type": "triangle",
+          "index": 1,
+          "order": 12,
+          "visible": false,
+          "x": 286.3573097391054,
+          "y": 395.99083059001714,
+          "size": 119.22459008172154,
+          "size2": 119.22459008172154,
+          "rotation": 352,
+          "color": "#DC2626",
+          "filled": false
+        },
+        {
+          "id": "triangle-2",
+          "type": "triangle",
+          "index": 2,
+          "order": 13,
+          "visible": false,
+          "x": 344.0627672942355,
+          "y": 194.82881694566458,
+          "size": 90.05764903500676,
+          "size2": 90.05764903500676,
+          "rotation": 339,
+          "color": "#6B7280",
+          "filled": true
+        },
+        {
+          "id": "triangle-3",
+          "type": "triangle",
+          "index": 3,
+          "order": 14,
+          "visible": true,
+          "x": 289.30976102128625,
+          "y": 264.2011242453009,
+          "size": 60.51203694194555,
+          "size2": 60.51203694194555,
+          "rotation": 317,
+          "color": "#1F2937",
+          "filled": false
+        },
+        {
+          "id": "triangle-4",
+          "type": "triangle",
+          "index": 4,
+          "order": 15,
+          "visible": true,
+          "x": 227.31565122958273,
+          "y": 366.8426803080365,
+          "size": 42.32362017035484,
+          "size2": 42.32362017035484,
+          "rotation": 241,
+          "color": "#1F2937",
+          "filled": true
+        }
+      ],
+      "meta": {
+        "generator": {
+          "version": "generate-1",
+          "seed": 3,
+          "seedInput": 3,
+          "rngAlgorithm": "mulberry32",
+          "rngVersion": "rng-1",
+          "params": {
+            "perType": 4,
+            "visibleProbability": 0.6,
+            "x": [
+              100,
+              400
+            ],
+            "y": [
+              100,
+              400
+            ],
+            "size": [
+              40,
+              120
+            ],
+            "rectangleAspect": 1.5,
+            "rotation": [
+              0,
+              359
+            ],
+            "filledProbability": 0.8,
+            "palette": [
+              "#1F2937",
+              "#374151",
+              "#4B5563",
+              "#6B7280",
+              "#DC2626",
+              "#EA580C",
+              "#D97706",
+              "#65A30D"
+            ]
+          }
+        }
+      }
+    }
+  }
+]
