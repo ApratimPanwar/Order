@@ -103,6 +103,8 @@ export const V1_CONFIG = Object.freeze({
 
   // --- applicability -------------------------------------------------------
   minElements: p(4, 'S10', 'Follows from m_h,3 needing a 2-element tail.'),
+  minDistinctPositions: p(2, 'S10',
+    'Grouping dispersion is undefined when every element shares one point.'),
 });
 
 /** Flattens the config to plain values for the scorer. */

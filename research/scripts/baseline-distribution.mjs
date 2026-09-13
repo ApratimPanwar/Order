@@ -115,6 +115,7 @@ for (let i = 0; i < MATCHED_N; i++) {
   const b = score(twin, V0_CONFIG);
   if (a.elementCount === 0) continue;
   matched.push({
+    reversedV1: matchedV1.length ? matchedV1[matchedV1.length - 1].delta <= 0 : null,
     seed,
     sourceStateId: layoutHash(source),
     twinStateId: layoutHash(twin),
@@ -168,6 +169,39 @@ const report = {
     structuredTotal: stats(matched.map((m) => m.structuredTotal)),
     randomPositionTotal: stats(matched.map((m) => m.randomPositionTotal)),
     delta: stats(matched.map((m) => m.delta)),
+    // F7: report the NET RATE CHANGE and the paired TRANSITIONS. The earlier
+    // write-up said the confound "explained ~20%" of the reversals. That was a
+    // causal claim derived from two aggregate counts, and it is withdrawn: a
+    // net drop of 34 can hide any number of flips in both directions, and the
+    // support difference is only one of several things that changed.
+    reversalAnalysis: (() => {
+      const b1 = matchedV1.map((m) => m.delta <= 0);
+      const b2 = matched.map((m) => m.delta <= 0);
+      const n = Math.min(b1.length, b2.length);
+      let stayed = 0; let becameReversal = 0; let ceasedReversal = 0; let neither = 0;
+      for (let i = 0; i < n; i++) {
+        if (b1[i] && b2[i]) stayed++;
+        else if (!b1[i] && b2[i]) becameReversal++;
+        else if (b1[i] && !b2[i]) ceasedReversal++;
+        else neither++;
+      }
+      const r1 = b1.filter(Boolean).length;
+      const r2 = b2.filter(Boolean).length;
+      return {
+        pairs: n,
+        baseline1Reversals: r1,
+        baseline2Reversals: r2,
+        baseline1Rate: +(r1 / n).toFixed(4),
+        baseline2Rate: +(r2 / n).toFixed(4),
+        netRateChangePercentagePoints: +(((r2 - r1) / n) * 100).toFixed(2),
+        transitions: { stayedReversal: stayed, ceasedToBeReversal: ceasedReversal, becameReversal, neverReversal: neither },
+        interpretation:
+          'Net rate change and paired transitions only. This does NOT attribute a '
+          + 'share of reversals to the support difference: baseline-2 changes the '
+          + 'sampling region for every element, so flips occur in both directions '
+          + 'and no causal decomposition is available from these counts.',
+      };
+    })(),
   },
 };
 

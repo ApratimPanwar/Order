@@ -147,7 +147,10 @@ writeFileSync(join(PUBLIC_DIR, 'manifest.json'), JSON.stringify({
 }, null, 2));
 
 writeFileSync(join(PRIVATE_DIR, 'stimulus-key.json'), JSON.stringify({
-  keyVersion: 'stimulus-key-1',
+  keyVersion: 'stimulus-key-2',
+  // Identity binding (F2): a join must be able to confirm this key describes the
+  // same archived manifest the participant actually saw.
+  manifestVersion: 'stimuli-1',
   builtAt: new Date().toISOString(),
   warning: 'RESEARCHER ONLY. Never place this file inside study/. It carries conditions and model scores.',
   approval: 'DEVELOPMENT CANDIDATE - NOT APPROVED. Scores here are not approved measurements.',

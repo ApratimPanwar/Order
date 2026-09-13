@@ -94,7 +94,8 @@
 
 <script type="module">
   import { RatingSession, RELEASE_STATUS, INSTRUMENT_VERSION,
-           INSTRUCTIONS_VERSION, ACKNOWLEDGEMENT_VERSION, defaultStorage } from './session.js';
+           INSTRUCTIONS_VERSION, ACKNOWLEDGEMENT_VERSION, defaultStorage,
+           SessionError, STORAGE_KEY } from './session.js';
   import { drawLayout, contentHash } from './render-layout.js';
 
   const $ = (id) => document.getElementById(id);
@@ -118,6 +119,10 @@
 
   let manifest = null;
   let session = null;
+  // Guards the async record->save->render sequence so a double click, an Enter
+  // key repeat, or an impatient second press cannot start a second submission
+  // while the first is still in flight (F4).
+  let submitting = false;
   let current = { order: null, appeal: null, shownAt: null, integrityOk: true };
 
   function buildScale(container, onPick) {
@@ -154,8 +159,8 @@
     const text = await res.text();
     const layout = JSON.parse(text);
     // Integrity: re-hash the canonical serialization we were served.
-    const integrityOk = contentHash(text) === item.integrity;
-    return { layout, integrityOk };
+    const computed = contentHash(text);
+    return { layout, integrityOk: computed === item.integrity, stimulusIntegrity: computed };
   }
 
   async function renderCurrent() {
@@ -165,8 +170,8 @@
     $('progress').textContent = `Composition ${c} of ${total}`;
 
     try {
-      const { layout, integrityOk } = await loadStimulus(id);
-      current = { order: null, appeal: null, shownAt: new Date().toISOString(), integrityOk };
+      const { layout, integrityOk, stimulusIntegrity } = await loadStimulus(id);
+      current = { order: null, appeal: null, shownAt: new Date().toISOString(), integrityOk, stimulusIntegrity };
       if (!integrityOk) {
         showError(`Composition ${c} did not match its expected checksum. Your rating will `
           + 'still be recorded, and flagged for review.');
@@ -176,8 +181,9 @@
     } catch (e) {
       showError(`Could not load composition ${c}: ${e.message}. Skipping it — your other `
         + 'answers are unaffected.');
-      // Record nothing; advance so a missing asset cannot trap the participant.
-      session.state.index += 1;
+      // Record nothing; advance through the audited skip path so the gap is
+      // visible in the export rather than being an unexplained missing id.
+      try { session.skipUnavailable(id, `load-failed: ${e.message}`); } catch { /* already advanced */ }
       session.save(storage);
       return renderCurrent();
     }
@@ -209,27 +215,70 @@
   });
 
   $('ackDecline').addEventListener('click', () => {
-    session.withdraw(); session.save(storage);
+    session.withdraw();
+    session.save(storage, { force: true });
     show('ackPanel', false); finish();
   });
 
   $('nextBtn').addEventListener('click', async () => {
-    const id = session.currentStimulusId;
-    session.record(id, {
-      order: current.order,
-      appeal: current.appeal,
-      comment: $('comment').value,
-      integrityOk: current.integrityOk,
-      shownAt: current.shownAt,
-    });
-    const saved = session.save(storage);
-    if (!saved.ok && storage) showError(`Progress could not be saved (${saved.reason}).`);
-    show('trialPanel', false);
-    await renderCurrent();
+    if (submitting) return;             // async race guard (F4)
+    submitting = true;
+    $('nextBtn').disabled = true;
+    try {
+      const id = session.currentStimulusId;
+      try {
+        session.record(id, {
+          order: current.order,
+          appeal: current.appeal,
+          comment: $('comment').value,
+          integrityOk: current.integrityOk,
+          stimulusIntegrity: current.stimulusIntegrity,
+          shownAt: current.shownAt,
+        });
+      } catch (e) {
+        if (e instanceof SessionError) {
+          // A rejected transition is shown, not swallowed. Duplicate and stale
+          // submissions land here instead of corrupting the record.
+          showError(`That answer was not recorded (${e.code}). ${e.message}`);
+          if (e.code === 'duplicate-response' || e.code === 'stale-trial') await reloadFromStorage();
+          return;
+        }
+        throw e;
+      }
+
+      const saved = session.save(storage);
+      if (!saved.ok && storage) {
+        if (saved.reason === 'stale-session') {
+          showError('Another tab of this task changed your progress, so this answer was not '
+            + 'saved. Reloading the newer version — please re-rate this composition here, '
+            + 'or continue in the other tab.');
+          await reloadFromStorage();
+          return;
+        }
+        showError(`Progress could not be saved (${saved.reason}).`);
+      }
+      show('trialPanel', false);
+      await renderCurrent();
+    } finally {
+      submitting = false;
+    }
   });
 
+  /** Re-reads the authoritative saved state after a conflict. */
+  async function reloadFromStorage() {
+    const loaded = RatingSession.load(storage);
+    if (loaded.ok) session = loaded.session;
+    show('trialPanel', false);
+    show('donePanel', false);
+    if (session.complete || session.state.withdrawn) finish();
+    else await renderCurrent();
+  }
+
   $('withdrawBtn').addEventListener('click', () => {
-    session.withdraw(); session.save(storage); finish();
+    session.withdraw();
+    // Withdrawal is terminal and must win over a concurrent tab.
+    session.save(storage, { force: true });
+    finish();
   });
 
   $('downloadBtn').addEventListener('click', () => {
@@ -247,6 +296,17 @@
     $('doneTitle').textContent = 'Erased';
     $('doneMsg').textContent = 'Everything you entered has been removed from this browser.';
     $('downloadBtn').disabled = true;
+  });
+
+  // Another tab wrote to the shared key. Pick up its state rather than racing it.
+  window.addEventListener('storage', async (e) => {
+    if (e.key !== STORAGE_KEY || submitting || !session) return;
+    const loaded = RatingSession.load(storage);
+    if (!loaded.ok) return;
+    if ((loaded.session.state.revision ?? 0) > (session.state.revision ?? 0)) {
+      showError('Another tab of this task is further along. This tab has been updated to match.');
+      await reloadFromStorage();
+    }
   });
 
   // --- boot: resume if a valid save exists ---------------------------------

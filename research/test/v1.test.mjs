@@ -370,7 +370,9 @@ test('showArrows is a hard gate: rotation is visible for every shape when on', (
   assert.ok(r.diagnostics.some((d) => d.code === 'show-arrows-enabled'));
 });
 
-test('coincident elements do not produce NaN (the v0 failure)', () => {
+test('all-coincident layouts are REJECTED at the gate, not scored and not NaN', () => {
+  // v0 returned NaN here. v1 rejects: grouping dispersion is undefined when every
+  // element shares one point (minDistinctPositions), so the layout is unsupported.
   const l = L([
     el({ x: 250, y: 250, type: 'circle' }),
     el({ x: 250, y: 250, type: 'square', color: '#DC2626' }),
@@ -378,10 +380,24 @@ test('coincident elements do not produce NaN (the v0 failure)', () => {
     el({ x: 250, y: 250, type: 'rectangle', size2: 90, color: '#D97706' }),
   ], 'fx-coincident');
   const r = score(l);
+  assert.equal(r.scorable, false);
+  assert.equal(r.total, null, 'null, never NaN and never a fabricated 0');
+  assert.ok(r.diagnostics.some((d) => d.code === 'below-min-distinct-positions'));
+});
+
+test('PARTIALLY coincident layouts still score, finitely', () => {
+  // Two elements sharing a point is not degenerate overall (spec 2.3).
+  const l = L([
+    el({ x: 250, y: 250, type: 'circle' }),
+    el({ x: 250, y: 250, type: 'square', color: '#DC2626' }),
+    el({ x: 120, y: 380, type: 'triangle', color: '#65A30D' }),
+    el({ x: 380, y: 120, type: 'rectangle', size2: 90, color: '#D97706' }),
+  ], 'fx-partly-coincident');
+  const r = score(l);
   assert.equal(r.scorable, true);
-  assert.ok(Number.isFinite(r.total), `total was ${r.total}`);
+  assert.ok(Number.isFinite(r.total));
   for (const [k, v] of Object.entries(r.submetrics)) {
-    assert.ok(Number.isFinite(v), `${k} was ${v}`);
+    assert.ok(Number.isFinite(v) && v >= 0 && v <= 1, `${k} = ${v}`);
   }
 });
 

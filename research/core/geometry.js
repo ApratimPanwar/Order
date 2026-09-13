@@ -231,6 +231,60 @@ export function unionFootprintArea(elements, canvas, opts = {}) {
   return covered * cellArea;
 }
 
+/**
+ * Per-cell UNION footprint coverage on a K x K grid (F6).
+ *
+ * Density evenness previously summed each element's clipped area per cell, so
+ * two overlapping elements counted twice in that cell while the whitespace term
+ * counted their union once. The two spatial submetrics therefore disagreed
+ * about what "occupied" meant. This returns union coverage per cell, using the
+ * same sampling machinery as unionFootprintArea, so both terms agree.
+ *
+ * @returns {number[]} K*K cell areas, row-major
+ */
+export function unionFootprintByCell(elements, canvas, opts = {}, K = 5) {
+  const N = opts.unionGridN ?? 512;
+  const polys = elements
+    .map((e) => clipToRect(toPolygon(e, opts), { x1: canvas.width, y1: canvas.height }))
+    .filter((p) => p.length >= 3);
+  const cells = new Array(K * K).fill(0);
+  if (polys.length === 0) return cells;
+
+  const boxes = polys.map((p) => {
+    const xs = p.map((q) => q[0]); const ys = p.map((q) => q[1]);
+    return { minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) };
+  });
+
+  const cellW = canvas.width / N;
+  const cellH = canvas.height / N;
+  const cellArea = cellW * cellH;
+  for (let j = 0; j < N; j++) {
+    const cy = (j + 0.5) * cellH;
+    const gy = Math.min(K - 1, Math.floor((cy / canvas.height) * K));
+    for (let i = 0; i < N; i++) {
+      const cx = (i + 0.5) * cellW;
+      for (let k = 0; k < polys.length; k++) {
+        const b = boxes[k];
+        if (cx < b.minX || cx > b.maxX || cy < b.minY || cy > b.maxY) continue;
+        if (pointInPolygon(cx, cy, polys[k])) {
+          const gx = Math.min(K - 1, Math.floor((cx / canvas.width) * K));
+          cells[gy * K + gx] += cellArea;
+          break; // union: count the sample once
+        }
+      }
+    }
+  }
+  return cells;
+}
+
+/**
+ * Relative error of the sampled union against an exactly-known case.
+ * Exposed so the approximation is testable and documentable rather than assumed.
+ */
+export function unionApproximationError(exactArea, sampledArea) {
+  return exactArea === 0 ? 0 : Math.abs(sampledArea - exactArea) / exactArea;
+}
+
 export function pointInPolygon(x, y, poly) {
   let inside = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {

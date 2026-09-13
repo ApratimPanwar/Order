@@ -110,19 +110,22 @@ three-condition design-task platform; a server collection endpoint.
 
 ## 4. Running it
 
+All commands below run from `Order/research`:
+
 ```bash
-cd research
-npm test                              # 134 tests
+cd Order/research
+npm test                                   # full suite
 node scripts/verify-specification.mjs --self
-node scripts/build-stimuli.mjs --n 12 # rebuild the stimulus set
+node scripts/build-stimuli.mjs --n 12      # rebuild the stimulus set
 node scripts/baseline-distribution.mjs --n 2000
+node scripts/attainability-witnesses.mjs
 ```
 
 The rating app is a static page. Serve **`research/study/` as the root** so
-`study-private/` is unreachable:
+`study-private/` is unreachable. From `Order/research`:
 
 ```bash
-python -m http.server 8761 --directory Order/research/study
+python -m http.server 8761 --directory study
 ```
 
 Then open `http://localhost:8761/index.html`.
@@ -151,11 +154,37 @@ node scripts/join-responses.mjs <export.json> --out joined.json
 
 ---
 
+## 5b. Second hardening pass (F1-F8)
+
+| # | Issue | Fix | Regression test |
+|---|---|---|---|
+| F1 | Withdrawal was recorded but not enforced; the join ignored it | `WITHDRAWAL_POLICY`; `withdraw()` stamps every response ineligible + `X2-withdrawn`; export enforces it; join refuses to reinstate | 3 tests in `hardening-v2` |
+| F2 | Join **dropped** unmatched responses; no identity binding | Unmatched preserved with `joinStatus`, empty (never 0) score fields; manifest/key/model/config bound, layout integrity compared; mismatch aborts with exit 3 | 4 tests |
+| F3 | `record()` accepted anything | Typed `SessionError`; rejects pre-acknowledgement, post-withdrawal, complete, stale, duplicate, out-of-range/non-integer ratings, oversized comments; audited `skipUnavailable()` | 7 tests |
+| F4 | Last-write-wins across tabs; no async guard | Optimistic concurrency on `revision` (CAS); `storage` listener resyncs; single in-flight submit guard; withdrawal force-saves; `sessionFormat` bumped to `rating-session-2` | 4 tests |
+| F5 | `score(null)` and friends **threw**; `minDistinctPositions` and clipped-area never enforced | Gate runs first and tolerates any input; unsupported types, malformed canvas/elements reported; all stated conditions enforced | 3 tests |
+| F6 | Density summed overlap while whitespace unioned it | `unionFootprintByCell()`; both terms now agree; union approximation measured (<1% at N=512) and tested | 2 tests |
+| F7 | Claimed the confound "explained ~20%" of reversals | Reports net rate change and **paired transitions**. 101 ceased, 67 became - 168 flips, not 34. No causal share is claimed. | 1 test |
+| F8 | Stale commands in this document | Corrected; a test asserts every documented script exists and the serve root resolves and is not `study-private` | 1 test |
+
+### Deviations from the specification, updated
+
+| Deviation | Reason |
+|---|---|
+| All-coincident layouts are **rejected**, not scored | `minDistinctPositions = 2`. Spec §2.3 says grouping dispersion is undefined there; rejecting is the honest reading. v0 returned NaN. |
+| Footprint union is **sampled**, not exact polygon union | Deterministic, error measured <1% at `unionGridN = 512`, parameter recorded in every result. Exact union is future work. |
+| Density evenness uses **union** coverage | Spec §7 did not state which; summing contradicted §7.1's whitespace term. Union chosen for consistency. |
+| `m_f,3` normalised by `d_diag`, not the manuscript's `d_max` | The manuscript form goes negative; reclassified *derived* in the spec. |
+
 ## 6. Remaining work before participant collection
 
 1. **Sign off S1–S21**, or narrow v1 and record what is excluded.
-2. **Fix concurrent-tab writes.** Verified last-write-wins with no coordination:
-   a rating made in one tab can be silently replaced by another. **Blocker.**
+2. ~~Fix concurrent-tab writes.~~ **Done (F4).** Verified in Chrome 152: two tabs
+   rating concurrently now both keep their work (5 responses, no duplicates, no
+   loss). Remaining limitation: the merge relies on the `storage` event; if a tab
+   is suspended long enough to miss it, its write is *refused* (`stale-session`)
+   and the participant is asked to re-rate that item rather than losing it
+   silently. That is safe but not seamless.
 3. **Ethics/consent review.** The current text is a development
    *acknowledgement*, not participant consent for a research study.
 4. **Decide collection infrastructure**, or accept download-only and document

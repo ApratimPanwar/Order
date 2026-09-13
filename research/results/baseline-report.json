@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-13T14:09:07.552Z",
+  "generatedAt": "2026-09-13T16:37:26.181Z",
   "provenance": {
     "modelVersion": "v0-as-shipped",
     "configVersion": "v0-config-1",
@@ -189,6 +189,21 @@
       "p50": 5.3024,
       "p95": 11.9306,
       "max": 18.4
+    },
+    "reversalAnalysis": {
+      "pairs": 2000,
+      "baseline1Reversals": 174,
+      "baseline2Reversals": 140,
+      "baseline1Rate": 0.087,
+      "baseline2Rate": 0.07,
+      "netRateChangePercentagePoints": -1.7,
+      "transitions": {
+        "stayedReversal": 73,
+        "ceasedToBeReversal": 101,
+        "becameReversal": 67,
+        "neverReversal": 1759
+      },
+      "interpretation": "Net rate change and paired transitions only. This does NOT attribute a share of reversals to the support difference: baseline-2 changes the sampling region for every element, so flips occur in both directions and no causal decomposition is available from these counts."
     }
   }
 }

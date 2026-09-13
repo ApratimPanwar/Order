@@ -23,10 +23,13 @@ import {
   parseColor, rgbToLab, chroma, hueAngle, deltaE00, labCentroid, contrastRatio,
 } from '../color.js';
 import {
-  toPolygon, clippedArea, clippedBBox, unionFootprintArea, equivalentDiameter,
-  scoringCentroid, rotationPeriod, circularConsistency, polygonArea, clipToRect,
+  toPolygon, clippedArea, clippedBBox, unionFootprintArea, unionFootprintByCell,
+  equivalentDiameter, scoringCentroid, rotationPeriod, circularConsistency,
+  polygonArea, clipToRect,
 } from '../geometry.js';
 import { V1_CONFIG, effectiveConfig, approvalRecord, MODEL_VERSION, CONFIG_VERSION, SPEC_VERSION } from './v1-config.js';
+
+const SUPPORTED_TYPES = new Set(['circle', 'square', 'rectangle', 'triangle']);
 
 const clip01 = (v) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
 const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
@@ -85,8 +88,29 @@ export function kendallTauB(a, b) {
 
 export function checkApplicability(layout, cfg = effectiveConfig()) {
   const reasons = [];
-  if (!layout || !Array.isArray(layout.elements)) {
-    return { scorable: false, reasons: [{ code: 'malformed-layout' }] };
+  // Malformed input must produce a REJECTION, never a thrown exception and
+  // never a fabricated score (F5).
+  if (layout === null || layout === undefined || typeof layout !== 'object') {
+    return { scorable: false, reasons: [{ code: 'malformed-layout', detail: `layout is ${layout === null ? 'null' : typeof layout}` }] };
+  }
+  if (!Array.isArray(layout.elements)) {
+    return { scorable: false, reasons: [{ code: 'malformed-layout', detail: 'elements is not an array' }] };
+  }
+  if (layout.canvas !== undefined && layout.canvas !== null) {
+    const c = layout.canvas;
+    if (typeof c !== 'object'
+      || !Number.isFinite(c.width) || !Number.isFinite(c.height)
+      || c.width <= 0 || c.height <= 0) {
+      return { scorable: false, reasons: [{ code: 'malformed-canvas', detail: 'width/height must be positive finite numbers' }] };
+    }
+  }
+  for (const e of layout.elements) {
+    if (!e || typeof e !== 'object') {
+      return { scorable: false, reasons: [{ code: 'malformed-element', detail: 'element is not an object' }] };
+    }
+    if (!SUPPORTED_TYPES.has(e.type)) {
+      reasons.push({ code: 'unsupported-element-type', detail: `${e.id ?? '?'}: ${JSON.stringify(e.type)}` });
+    }
   }
   if (layout.renderer?.showArrows === true) {
     reasons.push({ code: 'show-arrows-enabled', detail: 'rotation is visible for every shape when arrows are drawn' });
@@ -104,6 +128,33 @@ export function checkApplicability(layout, cfg = effectiveConfig()) {
     if (e.size <= 0) reasons.push({ code: 'zero-size-element', detail: e.id });
     const c = parseColor(e.color);
     if (!c.ok) reasons.push({ code: 'unparseable-color', detail: `${e.id}: ${c.reason}` });
+  }
+
+  // Remaining spec 2 conditions, previously only diagnosed after scoring (F5).
+  if (reasons.length === 0 && visible.length > 0) {
+    const canvas = layout.canvas ?? cfg.canvas;
+    const geomOpts = {
+      renderer: layout.meta?.rendererVersion ?? cfg.renderer,
+      circleFacets: cfg.circleFacets,
+      circleMode: cfg.circleMode,
+    };
+    const distinct = new Set(visible.map((e) => `${e.x},${e.y}`));
+    if (distinct.size < cfg.minDistinctPositions) {
+      reasons.push({
+        code: 'below-min-distinct-positions',
+        detail: `${distinct.size} < ${cfg.minDistinctPositions}`,
+      });
+    }
+    for (const e of visible) {
+      let a;
+      try { a = clippedArea(e, canvas, geomOpts); } catch (err) {
+        reasons.push({ code: 'geometry-error', detail: `${e.id}: ${err.message}` });
+        continue;
+      }
+      if (!(a > 0)) {
+        reasons.push({ code: 'zero-clipped-area', detail: `${e.id} has no visible area on the canvas` });
+      }
+    }
   }
   return { scorable: reasons.length === 0, reasons };
 }
@@ -182,18 +233,20 @@ function dbscan(items, eps, minPts) {
 
 export function score(layout, config = V1_CONFIG) {
   const cfg = effectiveConfig(config);
-  const canvas = layout.canvas ?? cfg.canvas;
-  const renderer = layout.meta?.rendererVersion ?? cfg.renderer;
+  // The gate runs FIRST and tolerates any input, so a malformed layout can
+  // never reach property access below (F5).
+  const gate = checkApplicability(layout, cfg);
+  const canvas = (layout && layout.canvas) ? layout.canvas : cfg.canvas;
+  const renderer = layout?.meta?.rendererVersion ?? cfg.renderer;
   const geomOpts = { renderer, circleFacets: cfg.circleFacets, circleMode: cfg.circleMode };
   const diagnostics = [];
 
-  const gate = checkApplicability(layout, cfg);
   const base = {
     modelVersion: MODEL_VERSION,
     configVersion: CONFIG_VERSION,
     specVersion: SPEC_VERSION,
     rendererVersion: renderer,
-    schemaVersion: layout.schemaVersion ?? null,
+    schemaVersion: layout?.schemaVersion ?? null,
     measureKind: 'geometric-proxy',
     approval: approvalRecord(config),
     effectiveConfig: cfg,
@@ -207,7 +260,9 @@ export function score(layout, config = V1_CONFIG) {
       dimensions: null,
       submetrics: null,
       diagnostics: gate.reasons,
-      elementCount: layout.elements?.filter((e) => e.visible).length ?? 0,
+      elementCount: Array.isArray(layout?.elements)
+        ? layout.elements.filter((e) => e && e.visible).length
+        : 0,
     };
   }
 
@@ -454,23 +509,12 @@ export function score(layout, config = V1_CONFIG) {
       sub['m_p,3'] = clip01(1 - Math.min(1, cv(margins)));
     }
 
-    // density evenness over a K x K footprint-share grid
+    // Density evenness over a K x K grid, using UNION coverage per cell so it
+    // agrees with the whitespace term about what "occupied" means (F6).
     const K = cfg.densityGridK;
-    const cellCounts = new Array(K * K).fill(0);
-    for (const it of items) {
-      const poly = clipToRect(toPolygon(it.e, geomOpts), { x1: canvas.width, y1: canvas.height });
-      if (poly.length < 3) continue;
-      for (let gy = 0; gy < K; gy++) {
-        for (let gx = 0; gx < K; gx++) {
-          const cellRect = {
-            x0: (gx * canvas.width) / K, y0: (gy * canvas.height) / K,
-            x1: ((gx + 1) * canvas.width) / K, y1: ((gy + 1) * canvas.height) / K,
-          };
-          const piece = clipToRect(poly, cellRect);
-          if (piece.length >= 3) cellCounts[gy * K + gx] += polygonArea(piece);
-        }
-      }
-    }
+    const cellCounts = unionFootprintByCell(
+      visible, canvas, { ...geomOpts, unionGridN: cfg.unionGridN }, K,
+    );
     sub['m_p,4'] = normalisedEntropy(cellCounts);
 
     // weighted balance
