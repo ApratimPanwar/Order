@@ -1,0 +1,85 @@
+{
+  "packageFormat": "release-package-1",
+  "packageId": "dev-pilot-1-ac87adf6cd9c9904",
+  "packageDigest": "ac87adf6cd9c990447e2237eea4cf21d58f431f4a657fcc369e0b1c127fd1955",
+  "label": "dev-pilot-1",
+  "builtAt": "2026-09-13T17:12:51.167Z",
+  "immutable": true,
+  "note": "Any change to any listed input produces a different packageDigest. Exports bind to packageDigest, not to reusable labels.",
+  "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED. Not a participant release.",
+  "identities": {
+    "modelVersion": "v1-development-candidate",
+    "configVersion": "v1-config-draft-1",
+    "specVersion": "V1-SPECIFICATION draft-2 (reconciled 2026-09-13)",
+    "rendererVersion": "renderer-2",
+    "manifestVersion": "stimuli-1",
+    "effectiveConfigDigest": "51eaa586fc82e358f22efcadb20f3be5032ed68b17864c63151c9c11f99179d1"
+  },
+  "stimuli": [
+    {
+      "stimulusId": "stim-ef4d96d3",
+      "sha256": "9621c7adf13df31cd44d65dbc94638e87b7cedfdffbad015d163bd3ae1013476",
+      "fnv": "53aad81d"
+    },
+    {
+      "stimulusId": "stim-c23cf687",
+      "sha256": "abe6d84ff4212ae278103e7463951de98a273f14be8c19b784c1e7f588d95ca0",
+      "fnv": "49f99bf6"
+    },
+    {
+      "stimulusId": "stim-48998d03",
+      "sha256": "a5a78b69366f84cbe24889b8f58a0be26715b0485e1d605dd8f5bd40d682bb7b",
+      "fnv": "71787d03"
+    },
+    {
+      "stimulusId": "stim-a76a3f7c",
+      "sha256": "75dd2a1e18389260438f50fb4e9e00f4625a851a2f97d3d2b2a5be10b339cf36",
+      "fnv": "e5ea9a3b"
+    },
+    {
+      "stimulusId": "stim-aa8f352e",
+      "sha256": "1e693f0dd405c5631f49a47e32fa313e2ebf1b2a3faf491e95b6407c73506c62",
+      "fnv": "7bd4e8d0"
+    },
+    {
+      "stimulusId": "stim-3a337ad1",
+      "sha256": "425655c4b3e9eba97b32246141724a6f1993be4cd687b559132a7338d708c0bd",
+      "fnv": "eee6e44f"
+    },
+    {
+      "stimulusId": "stim-e776a13f",
+      "sha256": "825258c5798ea876d99528cd32ce63b3ffa328c9e1756c591b2f4e0638ca5159",
+      "fnv": "55857cdc"
+    },
+    {
+      "stimulusId": "stim-f682f0c0",
+      "sha256": "b02ffe66cde2136f4ecd7c06b7164586068af379e4e82df993f9988e4d18886a",
+      "fnv": "dd7b984c"
+    },
+    {
+      "stimulusId": "stim-a8016a0c",
+      "sha256": "af1f22d82d78055a52b13e86d7be0525ab36a0758d47ffcaab690ba743fa05ae",
+      "fnv": "6b47554b"
+    },
+    {
+      "stimulusId": "stim-5258dd88",
+      "sha256": "adc92932f049fbab9babda2aa188bc0ceedb0bab4aa6fd184e271f00013ee8f8",
+      "fnv": "96c603e1"
+    },
+    {
+      "stimulusId": "stim-290942aa",
+      "sha256": "5a0c6cf47b7b486b960b5bac7d62b62dddddeea68ca87854f4f4586de74556b5",
+      "fnv": "3d51002f"
+    },
+    {
+      "stimulusId": "stim-58174ad3",
+      "sha256": "951406a25273e7c91fe66fcafd4e90fa619c8f474d5dd81e04b30a95022d2150",
+      "fnv": "2e5403e3"
+    },
+    {
+      "stimulusId": "stim-eb51b057",
+      "sha256": "a66e6ee37cfb146394a9ac81064760435643f16ce6ec92404d66d2eda4ca8a91",
+      "fnv": "5aacd1ad"
+    }
+  ]
+}

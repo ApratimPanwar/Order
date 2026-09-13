@@ -1,0 +1,30 @@
+{
+  "builtAt": "2026-09-13T17:16:17.953Z",
+  "status": "DEVELOPMENT BUILD - not a participant release",
+  "out": "dist/participant",
+  "fileCount": 19,
+  "files": [
+    "index.html",
+    "persistence.js",
+    "release-package.json",
+    "render-layout.js",
+    "session.js",
+    "stimuli/manifest.json",
+    "stimuli/stim-290942aa.json",
+    "stimuli/stim-3a337ad1.json",
+    "stimuli/stim-48998d03.json",
+    "stimuli/stim-5258dd88.json",
+    "stimuli/stim-58174ad3.json",
+    "stimuli/stim-a76a3f7c.json",
+    "stimuli/stim-a8016a0c.json",
+    "stimuli/stim-aa8f352e.json",
+    "stimuli/stim-c23cf687.json",
+    "stimuli/stim-e776a13f.json",
+    "stimuli/stim-eb51b057.json",
+    "stimuli/stim-ef4d96d3.json",
+    "stimuli/stim-f682f0c0.json"
+  ],
+  "releasePackageId": "dev-pilot-1-ac87adf6cd9c9904",
+  "findings": [],
+  "clean": true
+}

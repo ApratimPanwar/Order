@@ -13,7 +13,7 @@
  * true and analysisEligible.ratingOnly stays true, only modelAgreement goes false.
  */
 
-export const SESSION_FORMAT = 'rating-session-2';
+export const SESSION_FORMAT = 'rating-session-3';
 
 /**
  * WITHDRAWAL POLICY (enforced, not merely recorded).
@@ -46,7 +46,9 @@ export const INSTRUCTIONS_VERSION = 'instructions-1';
 export const ACKNOWLEDGEMENT_VERSION = 'acknowledgement-1';
 export const RELEASE_STATUS = 'DEVELOPMENT PILOT - NOT A DATA COLLECTION RELEASE';
 
-const STORAGE_KEY = 'order-blind-rating/session';
+import { SessionStore, STORAGE_KEY as STORE_KEY, PersistenceError } from './persistence.js';
+
+const STORAGE_KEY = STORE_KEY;
 
 /** Deterministic PRNG so presentation order is reproducible from the seed. */
 export function createRng(seedInput) {
@@ -93,7 +95,7 @@ export class RatingSession {
     this.#baseRevision = baseRevision ?? (Number.isInteger(state?.revision) ? state.revision : 0);
   }
 
-  static create({ manifest, orderSeed, participantId } = {}) {
+  static create({ manifest, orderSeed, participantId, releasePackage } = {}) {
     const pid = participantId ?? newParticipantId();
     const ids = manifest.items.map((i) => i.stimulusId);
     const seed = orderSeed ?? pid; // reproducible from the participant id alone
@@ -104,6 +106,11 @@ export class RatingSession {
       acknowledgementVersion: ACKNOWLEDGEMENT_VERSION,
       releaseStatus: RELEASE_STATUS,
       manifestVersion: manifest.manifestVersion,
+      // Frozen identity binding (B). A reusable label such as 'stimuli-1'
+      // survives a rebuild that changes every stimulus, so the CONTENT DIGEST
+      // is what an export is bound to.
+      releasePackageId: releasePackage?.packageId ?? null,
+      releasePackageDigest: releasePackage?.packageDigest ?? null,
       participantId: pid,
       orderSeed: String(seed),
       order: reproducibleOrder(ids, seed),
@@ -300,6 +307,102 @@ export class RatingSession {
   /** The revision this session last read from or wrote to storage. */
   get baseRevision() { return this.#baseRevision; }
 
+  // =========================================================================
+  // Transactional persistence (A). The compare-and-swap above is retained for
+  // the synchronous API, but these are what the app uses: every write happens
+  // inside an exclusive critical section against the LATEST stored state.
+  // =========================================================================
+
+  /**
+   * Commits this session's responses onto whatever is currently stored,
+   * MERGING rather than replacing. A response already present in storage is
+   * never overwritten by a stale copy, and rows this tab never saw survive.
+   */
+  async commitTo(store) {
+    const local = this.state;
+    const res = await store.commit((latest) => {
+      if (!latest) return local;
+      if (latest.participantId !== local.participantId) return null; // different session; leave it
+      const merged = JSON.parse(JSON.stringify(latest));
+      // Responses are append-only by stimulusId. First write wins per stimulus.
+      for (const [id, r] of Object.entries(local.responses)) {
+        if (!Object.prototype.hasOwnProperty.call(merged.responses, id)) merged.responses[id] = r;
+      }
+      merged.skipped = { ...(latest.skipped ?? {}), ...(local.skipped ?? {}) };
+      // The cursor is the furthest either tab reached.
+      merged.index = Math.max(latest.index ?? 0, local.index ?? 0);
+      merged.revision = Math.max(latest.revision ?? 0, local.revision ?? 0) + 1;
+      merged.acknowledged = latest.acknowledged || local.acknowledged;
+      merged.acknowledgedAt = latest.acknowledgedAt ?? local.acknowledgedAt;
+      // Withdrawal is sticky: once either side withdrew, it stays withdrawn.
+      if (latest.withdrawn || local.withdrawn) {
+        merged.withdrawn = true;
+        merged.withdrawnAt = latest.withdrawnAt ?? local.withdrawnAt;
+        merged.status = 'withdrawn';
+        for (const r of Object.values(merged.responses)) {
+          r.analysisEligible = { modelAgreement: false, ratingOnly: false };
+          r.exclusionRule = 'X2-withdrawn';
+          r.withdrawnAt = merged.withdrawnAt;
+        }
+      } else if (merged.index >= merged.order.length) {
+        merged.status = 'completed';
+      }
+      return merged;
+    });
+    if (res.ok && res.state) {
+      this.state = res.state;
+      this.#baseRevision = res.state.revision ?? 0;
+    }
+    return res;
+  }
+
+  /**
+   * Withdrawal applied to the LATEST stored session (A).
+   *
+   * Previously a stale tab could force-write its own thin copy, destroying rows
+   * it had never seen. Withdrawal now loads current state inside the lock and
+   * marks THOSE rows, preserving every one of them under the documented
+   * audit-retention policy.
+   */
+  async withdrawLatest(store) {
+    const localResponses = this.state.responses;
+    const at = new Date().toISOString();
+    const res = await store.commit((latest) => {
+      const base = (latest && latest.participantId === this.state.participantId)
+        ? JSON.parse(JSON.stringify(latest))
+        : JSON.parse(JSON.stringify(this.state));
+      // Union of rows: nothing is dropped by withdrawing from a stale tab.
+      for (const [id, r] of Object.entries(localResponses)) {
+        if (!Object.prototype.hasOwnProperty.call(base.responses, id)) base.responses[id] = r;
+      }
+      base.withdrawn = true;
+      base.withdrawnAt = base.withdrawnAt ?? at;
+      base.status = 'withdrawn';
+      base.revision = (base.revision ?? 0) + 1;
+      for (const r of Object.values(base.responses)) {
+        r.analysisEligible = { modelAgreement: false, ratingOnly: false };
+        r.exclusionRule = 'X2-withdrawn';
+        r.withdrawnAt = base.withdrawnAt;
+      }
+      return base;
+    }, { requireOwnership: false });   // withdrawal must always be possible
+    if (res.ok && res.state) {
+      this.state = res.state;
+      this.#baseRevision = res.state.revision ?? 0;
+    }
+    return res;
+  }
+
+  /** Erases via the store so a tombstone blocks resurrection by a stale tab. */
+  async eraseVia(store) {
+    this.state.responses = {};
+    this.state.index = 0;
+    this.state.status = 'erased';
+    this.state.erasedAt = new Date().toISOString();
+    this.state.revision += 1;
+    return store.erase(this.state.participantId);
+  }
+
   static load(storage = defaultStorage()) {
     if (!storage) return { ok: false, reason: 'storage-unavailable' };
     let raw;
@@ -337,6 +440,8 @@ export class RatingSession {
       instructionsVersion: this.state.instructionsVersion,
       acknowledgementVersion: this.state.acknowledgementVersion,
       manifestVersion: this.state.manifestVersion,
+      releasePackageId: this.state.releasePackageId ?? null,
+      releasePackageDigest: this.state.releasePackageDigest ?? null,
       sessionFormat: this.state.sessionFormat,
       participantId: this.state.participantId,
       orderSeed: this.state.orderSeed,
@@ -361,9 +466,11 @@ export class RatingSession {
       skipped: this.state.skipped ?? {},
       revision: this.state.revision,
       modelJoin: {
-        note: 'scoreAvailable and analysisEligible.modelAgreement are filled OFFLINE by '
-          + 'joining study-private/stimulus-key.json on stimulusId. They are null here '
-          + 'because the participant bundle carries no scores.',
+        // Deliberately does NOT name the researcher-side file. This note ships
+        // inside the participant bundle and inside every export, so it must not
+        // disclose where the scoring key lives or that conditions exist.
+        note: 'scoreAvailable and analysisEligible.modelAgreement are null here and are '
+          + 'completed offline by the researcher. The participant bundle carries no scores.',
       },
     };
   }

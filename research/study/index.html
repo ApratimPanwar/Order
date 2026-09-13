@@ -96,6 +96,7 @@
   import { RatingSession, RELEASE_STATUS, INSTRUMENT_VERSION,
            INSTRUCTIONS_VERSION, ACKNOWLEDGEMENT_VERSION, defaultStorage,
            SessionError, STORAGE_KEY } from './session.js';
+  import { SessionStore } from './persistence.js';
   import { drawLayout, contentHash } from './render-layout.js';
 
   const $ = (id) => document.getElementById(id);
@@ -118,7 +119,10 @@
   }
 
   let manifest = null;
+  let releasePackage = null;
   let session = null;
+  let store = null;
+  let readOnly = false;
   // Guards the async record->save->render sequence so a double click, an Enter
   // key repeat, or an impatient second press cannot start a second submission
   // while the first is still in flight (F4).
@@ -148,6 +152,12 @@
   async function loadManifest() {
     const res = await fetch('stimuli/manifest.json', { cache: 'no-store' });
     if (!res.ok) throw new Error(`manifest unavailable (HTTP ${res.status})`);
+    return res.json();
+  }
+
+  async function loadReleasePackage() {
+    const res = await fetch('release-package.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`release package unavailable (HTTP ${res.status})`);
     return res.json();
   }
 
@@ -184,7 +194,7 @@
       // Record nothing; advance through the audited skip path so the gap is
       // visible in the export rather than being an unexplained missing id.
       try { session.skipUnavailable(id, `load-failed: ${e.message}`); } catch { /* already advanced */ }
-      session.save(storage);
+      await session.commitTo(store);
       return renderCurrent();
     }
 
@@ -208,15 +218,15 @@
   }
 
   $('ackBtn').addEventListener('click', async () => {
+    if (readOnly) { showError('This tab is read-only because the task is open elsewhere.'); return; }
     session.acknowledge();
-    session.save(storage);
+    await session.commitTo(store);
     show('ackPanel', false);
     await renderCurrent();
   });
 
-  $('ackDecline').addEventListener('click', () => {
-    session.withdraw();
-    session.save(storage, { force: true });
+  $('ackDecline').addEventListener('click', async () => {
+    await session.withdrawLatest(store);
     show('ackPanel', false); finish();
   });
 
@@ -246,8 +256,14 @@
         throw e;
       }
 
-      const saved = session.save(storage);
+      const saved = await session.commitTo(store);
       if (!saved.ok && storage) {
+        if (saved.reason === 'not-active-tab') {
+          readOnly = true;
+          showError('Another tab took over this task, so this answer was not saved. '
+            + 'Continue in that tab, or close it and reload here.');
+          return;
+        }
         if (saved.reason === 'stale-session') {
           showError('Another tab of this task changed your progress, so this answer was not '
             + 'saved. Reloading the newer version — please re-rate this composition here, '
@@ -274,10 +290,10 @@
     else await renderCurrent();
   }
 
-  $('withdrawBtn').addEventListener('click', () => {
-    session.withdraw();
-    // Withdrawal is terminal and must win over a concurrent tab.
-    session.save(storage, { force: true });
+  $('withdrawBtn').addEventListener('click', async () => {
+    // Applies withdrawal to the LATEST stored session, preserving its rows (A).
+    const res = await session.withdrawLatest(store);
+    if (!res.ok) showError(`Withdrawal could not be saved (${res.reason}). Your answers remain on this device.`);
     finish();
   });
 
@@ -291,8 +307,8 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
 
-  $('eraseBtn').addEventListener('click', () => {
-    session.erase(storage);
+  $('eraseBtn').addEventListener('click', async () => {
+    await session.eraseVia(store);
     $('doneTitle').textContent = 'Erased';
     $('doneMsg').textContent = 'Everything you entered has been removed from this browser.';
     $('downloadBtn').disabled = true;
@@ -313,9 +329,27 @@
   (async () => {
     try {
       manifest = await loadManifest();
+      releasePackage = await loadReleasePackage();
     } catch (e) {
       showError(`The task cannot start: ${e.message}`);
       return;
+    }
+
+    store = new SessionStore({ storage });
+
+    // Single-active-tab policy (A). A second tab is read-only and says so,
+    // rather than competing for the same record.
+    const claim = store.claimLease();
+    if (!claim.ok && claim.reason === 'another-tab-active') {
+      readOnly = true;
+      showError('This task is already open in another tab or window. To avoid losing '
+        + 'answers, only one can be active. Close the other one and reload this page.');
+    } else {
+      setInterval(() => { if (!readOnly) store.renewLease(); }, 5000);
+    }
+
+    if (store.isErased()) {
+      showError('This session was erased on this device. Nothing further is stored here.');
     }
 
     const loaded = RatingSession.load(storage);
@@ -323,11 +357,16 @@
       session = loaded.session;
     } else {
       if (loaded.reason === 'corrupt-saved-session') {
-        showError('A previously saved session could not be read, so a fresh one was started.');
-        RatingSession.clear(storage);
+        // Corrupt data is QUARANTINED, never destroyed (operational item).
+        const q = store.quarantineCorrupt();
+        showError(q.ok
+          ? `A previously saved session could not be read. It has been kept on this device `
+            + `under "${q.quarantineKey}" (${q.bytes} bytes) in case it can be recovered, and a `
+            + `fresh session was started.`
+          : 'A previously saved session could not be read, so a fresh one was started.');
       }
-      session = RatingSession.create({ manifest });
-      session.save(storage);
+      session = RatingSession.create({ manifest, releasePackage });
+      await session.commitTo(store);
     }
 
     window.__rating = {
@@ -342,6 +381,11 @@
         orderSeed: session.state.orderSeed,
         order: session.state.order,
         storageAvailable: !!storage,
+        readOnly,
+        isOwner: store ? store.isOwner() : null,
+        releasePackageId: session.state.releasePackageId,
+        releasePackageDigest: session.state.releasePackageDigest,
+        quarantined: store ? store.listQuarantined() : [],
         currentStimulusId: session.currentStimulusId,
       }),
       exportRecord: () => session.exportRecord(),

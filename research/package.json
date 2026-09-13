@@ -8,7 +8,9 @@
     "test": "node --test \"test/*.test.mjs\"",
     "test:characterization": "node --test test/characterization.v0.test.mjs",
     "test:equivalence": "node --test test/equivalence.test.mjs",
-    "test:v1": "node --test test/v1-requirements.test.mjs",
-    "verify:spec": "node scripts/verify-specification.mjs"
+    "test:v1": "node --test test/v1.test.mjs",
+    "verify:spec": "node scripts/verify-specification.mjs",
+    "test:hardening": "node --test test/hardening-v2.test.mjs",
+    "build:release": "node scripts/build-release-package.mjs"
   }
 }

@@ -260,7 +260,9 @@ test('export carries versions and the reproducible order for offline joining', (
   assert.ok(Array.isArray(rec.order) && rec.order.length === manifest.count);
   assert.ok(rec.orderSeed);
   assert.equal(rec.responses.length, 1);
-  assert.match(rec.modelJoin.note, /joining study-private/);
+  // The note must NOT name the researcher-side file (it ships to participants).
+  assert.ok(!rec.modelJoin.note.includes('study-private'));
+  assert.match(rec.modelJoin.note, /completed offline by the researcher/);
 });
 
 test('offline score join reproduces model-agreement eligibility for every response', () => {

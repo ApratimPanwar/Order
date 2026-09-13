@@ -4,3 +4,6 @@
 responses/
 joined*.json
 joined*.csv
+
+# Built participant bundle is a build artifact
+dist/

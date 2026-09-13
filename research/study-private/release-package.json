@@ -1,0 +1,257 @@
+{
+  "packageFormat": "release-package-1",
+  "packageId": "dev-pilot-1-ac87adf6cd9c9904",
+  "packageDigest": "ac87adf6cd9c990447e2237eea4cf21d58f431f4a657fcc369e0b1c127fd1955",
+  "label": "dev-pilot-1",
+  "builtAt": "2026-09-13T17:12:51.167Z",
+  "immutable": true,
+  "note": "Any change to any listed input produces a different packageDigest. Exports bind to packageDigest, not to reusable labels.",
+  "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED. Not a participant release.",
+  "identities": {
+    "modelVersion": "v1-development-candidate",
+    "configVersion": "v1-config-draft-1",
+    "specVersion": "V1-SPECIFICATION draft-2 (reconciled 2026-09-13)",
+    "rendererVersion": "renderer-2",
+    "manifestVersion": "stimuli-1",
+    "effectiveConfigDigest": "51eaa586fc82e358f22efcadb20f3be5032ed68b17864c63151c9c11f99179d1"
+  },
+  "sources": [
+    {
+      "path": "docs/decisions/V1-SPECIFICATION.md",
+      "sha256": "81aca62320a2386ec3499e04d30ff8cef45c9446f3ccf5761aa0d9409c016146",
+      "bytes": 54866
+    },
+    {
+      "path": "core/scoring/v1.js",
+      "sha256": "cd8685f71ab80b2b070fc43d34f4867d1136640d9c73f15e3769802465ddfb42",
+      "bytes": 24718
+    },
+    {
+      "path": "core/scoring/v1-config.js",
+      "sha256": "ea369592cd0390c1d883c56e5d02b117ff9ef98ccaa974bec63094864973d984",
+      "bytes": 6465
+    },
+    {
+      "path": "core/geometry.js",
+      "sha256": "b9ced483b15bfa22c53349688e77da643d7155ee02138eab00f99a03f10edc06",
+      "bytes": 12543
+    },
+    {
+      "path": "core/color.js",
+      "sha256": "9c2322887aba7331e4b6830d4a75bd2462c3d08dafe9a9248b82fc551c4bb657",
+      "bytes": 7019
+    },
+    {
+      "path": "study/render-layout.js",
+      "sha256": "33084ecbf058576f1ad8dc2fbadf0afa57108e730b9c92fb2f70443133ce96ac",
+      "bytes": 3007
+    },
+    {
+      "path": "study/session.js",
+      "sha256": "1a4a16bb17c844f65971cd3611834de28de938bc70f47202b27742cc7222318c",
+      "bytes": 21614
+    },
+    {
+      "path": "study/persistence.js",
+      "sha256": "dc8f408923797dcc279413f28cd9de97a3cd54100f54e65232d4b51ecc810226",
+      "bytes": 9294
+    },
+    {
+      "path": "study/stimuli/manifest.json",
+      "sha256": "a526115658f454215a37606cf1d2fb4b9ef31f150defddccc46a4246f8dee340",
+      "bytes": 2332
+    }
+  ],
+  "effectiveConfig": {
+    "canvas": {
+      "width": 500,
+      "height": 500,
+      "background": "#FFFFFF"
+    },
+    "renderer": "renderer-2",
+    "circleFacets": 64,
+    "circleMode": "area-matched",
+    "areaBasis": "occupied-footprint",
+    "unionGridN": 512,
+    "prominenceWeights": {
+      "area": 0.4,
+      "contrast": 0.3,
+      "position": 0.2,
+      "chroma": 0.1
+    },
+    "kappa": 0.5,
+    "submetricWeights": {
+      "hierarchy": [
+        0.5,
+        0.3,
+        0.2
+      ],
+      "grouping": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "structure": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "flow": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "spatial": [
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2
+      ],
+      "variety": [
+        0.5,
+        0.5
+      ]
+    },
+    "dbscanEpsFactor": 1.5,
+    "dbscanMinPts": 2,
+    "separationGapFactor": 3,
+    "deltaERef": 50,
+    "gridPitch": 8,
+    "gridTolerance": 2,
+    "alignTolerance": 5,
+    "flowCostWeights": {
+      "distance": 0.5,
+      "turn": 0.5
+    },
+    "readingOrder": "ltr-ttb",
+    "readingRowBands": 3,
+    "whitespaceTarget": 0.4,
+    "densityGridK": 5,
+    "diversityTarget": 0.5,
+    "hueBins": 12,
+    "chromaThreshold": 10,
+    "modularTolerance": 0.1,
+    "dimensionWeights": {
+      "hierarchy": 0.22222222222222224,
+      "grouping": 0.19999999999999998,
+      "structure": 0.17777777777777778,
+      "flow": 0.16666666666666666,
+      "spatial": 0.13333333333333333,
+      "variety": 0.09999999999999999
+    },
+    "minElements": 4,
+    "minDistinctPositions": 2
+  },
+  "stimuli": [
+    {
+      "stimulusId": "stim-ef4d96d3",
+      "sha256": "9621c7adf13df31cd44d65dbc94638e87b7cedfdffbad015d163bd3ae1013476",
+      "fnv": "53aad81d",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-c23cf687",
+      "sha256": "abe6d84ff4212ae278103e7463951de98a273f14be8c19b784c1e7f588d95ca0",
+      "fnv": "49f99bf6",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-48998d03",
+      "sha256": "a5a78b69366f84cbe24889b8f58a0be26715b0485e1d605dd8f5bd40d682bb7b",
+      "fnv": "71787d03",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-a76a3f7c",
+      "sha256": "75dd2a1e18389260438f50fb4e9e00f4625a851a2f97d3d2b2a5be10b339cf36",
+      "fnv": "e5ea9a3b",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-aa8f352e",
+      "sha256": "1e693f0dd405c5631f49a47e32fa313e2ebf1b2a3faf491e95b6407c73506c62",
+      "fnv": "7bd4e8d0",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-3a337ad1",
+      "sha256": "425655c4b3e9eba97b32246141724a6f1993be4cd687b559132a7338d708c0bd",
+      "fnv": "eee6e44f",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-e776a13f",
+      "sha256": "825258c5798ea876d99528cd32ce63b3ffa328c9e1756c591b2f4e0638ca5159",
+      "fnv": "55857cdc",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-f682f0c0",
+      "sha256": "b02ffe66cde2136f4ecd7c06b7164586068af379e4e82df993f9988e4d18886a",
+      "fnv": "dd7b984c",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-a8016a0c",
+      "sha256": "af1f22d82d78055a52b13e86d7be0525ab36a0758d47ffcaab690ba743fa05ae",
+      "fnv": "6b47554b",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-5258dd88",
+      "sha256": "adc92932f049fbab9babda2aa188bc0ceedb0bab4aa6fd184e271f00013ee8f8",
+      "fnv": "96c603e1",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-290942aa",
+      "sha256": "5a0c6cf47b7b486b960b5bac7d62b62dddddeea68ca87854f4f4586de74556b5",
+      "fnv": "3d51002f",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-58174ad3",
+      "sha256": "951406a25273e7c91fe66fcafd4e90fa619c8f474d5dd81e04b30a95022d2150",
+      "fnv": "2e5403e3",
+      "rendererVersion": "renderer-2"
+    },
+    {
+      "stimulusId": "stim-eb51b057",
+      "sha256": "a66e6ee37cfb146394a9ac81064760435643f16ce6ec92404d66d2eda4ca8a91",
+      "fnv": "5aacd1ad",
+      "rendererVersion": "renderer-2"
+    }
+  ],
+  "scoringKey": {
+    "path": "study-private/stimulus-key.json",
+    "sha256": "569a48ec6565b1066627e12aa6c1c17bbb3cb66abd7da0d6b156e01fe58614dd",
+    "bytes": 18316
+  },
+  "components": [
+    "core/color.js:9c2322887aba7331e4b6830d4a75bd2462c3d08dafe9a9248b82fc551c4bb657",
+    "core/geometry.js:b9ced483b15bfa22c53349688e77da643d7155ee02138eab00f99a03f10edc06",
+    "core/scoring/v1-config.js:ea369592cd0390c1d883c56e5d02b117ff9ef98ccaa974bec63094864973d984",
+    "core/scoring/v1.js:cd8685f71ab80b2b070fc43d34f4867d1136640d9c73f15e3769802465ddfb42",
+    "docs/decisions/V1-SPECIFICATION.md:81aca62320a2386ec3499e04d30ff8cef45c9446f3ccf5761aa0d9409c016146",
+    "effective-config:51eaa586fc82e358f22efcadb20f3be5032ed68b17864c63151c9c11f99179d1",
+    "scoring-key:569a48ec6565b1066627e12aa6c1c17bbb3cb66abd7da0d6b156e01fe58614dd",
+    "stim-290942aa:5a0c6cf47b7b486b960b5bac7d62b62dddddeea68ca87854f4f4586de74556b5",
+    "stim-3a337ad1:425655c4b3e9eba97b32246141724a6f1993be4cd687b559132a7338d708c0bd",
+    "stim-48998d03:a5a78b69366f84cbe24889b8f58a0be26715b0485e1d605dd8f5bd40d682bb7b",
+    "stim-5258dd88:adc92932f049fbab9babda2aa188bc0ceedb0bab4aa6fd184e271f00013ee8f8",
+    "stim-58174ad3:951406a25273e7c91fe66fcafd4e90fa619c8f474d5dd81e04b30a95022d2150",
+    "stim-a76a3f7c:75dd2a1e18389260438f50fb4e9e00f4625a851a2f97d3d2b2a5be10b339cf36",
+    "stim-a8016a0c:af1f22d82d78055a52b13e86d7be0525ab36a0758d47ffcaab690ba743fa05ae",
+    "stim-aa8f352e:1e693f0dd405c5631f49a47e32fa313e2ebf1b2a3faf491e95b6407c73506c62",
+    "stim-c23cf687:abe6d84ff4212ae278103e7463951de98a273f14be8c19b784c1e7f588d95ca0",
+    "stim-e776a13f:825258c5798ea876d99528cd32ce63b3ffa328c9e1756c591b2f4e0638ca5159",
+    "stim-eb51b057:a66e6ee37cfb146394a9ac81064760435643f16ce6ec92404d66d2eda4ca8a91",
+    "stim-ef4d96d3:9621c7adf13df31cd44d65dbc94638e87b7cedfdffbad015d163bd3ae1013476",
+    "stim-f682f0c0:b02ffe66cde2136f4ecd7c06b7164586068af379e4e82df993f9988e4d18886a",
+    "study/persistence.js:dc8f408923797dcc279413f28cd9de97a3cd54100f54e65232d4b51ecc810226",
+    "study/render-layout.js:33084ecbf058576f1ad8dc2fbadf0afa57108e730b9c92fb2f70443133ce96ac",
+    "study/session.js:1a4a16bb17c844f65971cd3611834de28de938bc70f47202b27742cc7222318c",
+    "study/stimuli/manifest.json:a526115658f454215a37606cf1d2fb4b9ef31f150defddccc46a4246f8dee340"
+  ]
+}

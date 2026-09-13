@@ -26,6 +26,9 @@ import {
 
 const ROOT = join(import.meta.dirname, '..');
 const manifest = JSON.parse(readFileSync(join(ROOT, 'study', 'stimuli', 'manifest.json'), 'utf8'));
+// Sessions must bind to the frozen release package, or the join refuses them.
+const releasePackage = JSON.parse(readFileSync(join(ROOT, 'study', 'release-package.json'), 'utf8'));
+const manifestById = new Map(manifest.items.map((i) => [i.stimulusId, i]));
 const keyFile = JSON.parse(readFileSync(join(ROOT, 'study-private', 'stimulus-key.json'), 'utf8'));
 
 const memStorage = () => {
@@ -41,7 +44,19 @@ const el = (o) => ({
   x: 250, y: 250, size: 60, rotation: 0, color: '#808080', filled: true, ...o,
 });
 const L = (els, id) => createLayout({ id, elements: els.map((e, i) => ({ ...e, index: e.index ?? i + 1, order: i })) });
-const started = () => { const s = RatingSession.create({ manifest }); s.acknowledge(); return s; };
+const started = () => {
+  const s = RatingSession.create({ manifest, releasePackage });
+  s.acknowledge();
+  return s;
+};
+/** Records with the real integrity hash so joins can bind the layout. */
+const rate = (s, o, a, extra = {}) => {
+  const id = s.currentStimulusId;
+  return s.record(id, {
+    order: o, appeal: a, integrityOk: true,
+    stimulusIntegrity: manifestById.get(id)?.integrity, ...extra,
+  });
+};
 
 // ===========================================================================
 // F1 — withdrawal propagates through export and joining
@@ -81,7 +96,7 @@ test('F1: the export enforces withdrawal, it does not merely flag it', () => {
 test('F1: a withdrawn export cannot be reinstated by joining', () => {
   const dir = mkdtempSync(join(tmpdir(), 'order-join-'));
   const s = started();
-  while (!s.complete) s.record(s.currentStimulusId, { order: 4, appeal: 4, integrityOk: true });
+  while (!s.complete) rate(s, 4, 4);
   s.withdraw();
   const f = join(dir, 'withdrawn.json');
   writeFileSync(f, JSON.stringify(s.exportRecord()));
@@ -103,7 +118,7 @@ test('F1: a withdrawn export cannot be reinstated by joining', () => {
 test('F2: unmatched responses are PRESERVED, not dropped', () => {
   const dir = mkdtempSync(join(tmpdir(), 'order-join-'));
   const s = started();
-  s.record(s.currentStimulusId, { order: 5, appeal: 3, integrityOk: true });
+  rate(s, 5, 3);
   const rec = s.exportRecord();
   // A stimulus the key does not know about (e.g. a retired archive entry).
   rec.responses.push({
@@ -142,7 +157,7 @@ test('F2: a manifest identity mismatch ABORTS the join', () => {
 test('F2: the join binds to key, manifest, model and config identities', () => {
   const dir = mkdtempSync(join(tmpdir(), 'order-join-'));
   const s = started();
-  while (!s.complete) s.record(s.currentStimulusId, { order: 3, appeal: 5, integrityOk: true });
+  while (!s.complete) rate(s, 3, 5);
   const f = join(dir, 'e.json'); writeFileSync(f, JSON.stringify(s.exportRecord()));
   const out = join(dir, 'j.json');
   execFileSync('node', [join(ROOT, 'scripts', 'join-responses.mjs'), f, '--out', out], { encoding: 'utf8' });
@@ -159,7 +174,7 @@ test('F2: the join binds to key, manifest, model and config identities', () => {
 test('F2: a layout-integrity disagreement blocks model agreement but keeps the rating', () => {
   const dir = mkdtempSync(join(tmpdir(), 'order-join-'));
   const s = started();
-  s.record(s.currentStimulusId, { order: 6, appeal: 2, integrityOk: true, stimulusIntegrity: 'ffffffff' });
+  rate(s, 6, 2, { stimulusIntegrity: 'ffffffff' });
   const f = join(dir, 'e.json'); writeFileSync(f, JSON.stringify(s.exportRecord()));
   const out = join(dir, 'j.json');
   execFileSync('node', [join(ROOT, 'scripts', 'join-responses.mjs'), f, '--out', out], { encoding: 'utf8' });
@@ -177,7 +192,7 @@ test('F2: a layout-integrity disagreement blocks model agreement but keeps the r
 // ===========================================================================
 
 test('F3: a rating before acknowledgement is refused', () => {
-  const s = RatingSession.create({ manifest });
+  const s = RatingSession.create({ manifest, releasePackage });
   assert.throws(() => s.record(s.currentStimulusId, { order: 4, appeal: 4 }),
     (e) => e instanceof SessionError && e.code === 'not-acknowledged');
 });
@@ -307,9 +322,9 @@ test('F4: withdrawal force-saves and wins over a concurrent tab', () => {
 });
 
 test('F4: the session format was bumped so old saves are not silently reused', () => {
-  assert.equal(SESSION_FORMAT, 'rating-session-2');
+  assert.equal(SESSION_FORMAT, 'rating-session-3');
   const st = memStorage();
-  st.setItem('order-blind-rating/session', JSON.stringify({ sessionFormat: 'rating-session-1', order: ['a'], index: 0, responses: {}, participantId: 'p' }));
+  st.setItem('order-blind-rating/session', JSON.stringify({ sessionFormat: 'rating-session-2', order: ['a'], index: 0, responses: {}, participantId: 'p' }));
   assert.equal(RatingSession.load(st).ok, false);
 });
 

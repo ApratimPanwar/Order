@@ -31,7 +31,8 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { join, resolve } from 'node:path';
 
 const exportPath = process.argv[2];
 if (!exportPath) {
@@ -42,18 +43,38 @@ const outIdx = process.argv.indexOf('--out');
 const outPath = outIdx === -1 ? null : process.argv[outIdx + 1];
 const allowMismatch = process.argv.includes('--allow-identity-mismatch');
 
-const KEY = join(import.meta.dirname, '..', 'study-private', 'stimulus-key.json');
+const ROOT = join(import.meta.dirname, '..');
+const KEY = join(ROOT, 'study-private', 'stimulus-key.json');
+const PKG = join(ROOT, 'study-private', 'release-package.json');
 if (!existsSync(KEY)) {
   console.error(`stimulus key not found at ${KEY}. Run: node scripts/build-stimuli.mjs`);
   process.exit(2);
 }
+if (!existsSync(PKG)) {
+  console.error(`release package not found at ${PKG}. Run: node scripts/build-release-package.mjs`);
+  process.exit(2);
+}
+const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
+const pkg = JSON.parse(readFileSync(PKG, 'utf8'));
 
 const rec = JSON.parse(readFileSync(exportPath, 'utf8'));
 const key = JSON.parse(readFileSync(KEY, 'utf8'));
 const byId = new Map(key.items.map((i) => [i.stimulusId, i]));
 
 // --- 3. identity binding ---------------------------------------------------
+const currentKeyDigest = sha256(readFileSync(KEY));
 const identity = {
+  // Content digests, not reusable labels. A rebuild that changes any stimulus
+  // changes packageDigest, so a mismatch is detectable even when the labels
+  // ('stimuli-1') are identical.
+  exportPackageId: rec.releasePackageId ?? null,
+  exportPackageDigest: rec.releasePackageDigest ?? null,
+  currentPackageId: pkg.packageId,
+  currentPackageDigest: pkg.packageDigest,
+  packageDigestMatches: null,
+  keyDigestInPackage: pkg.scoringKey?.sha256 ?? null,
+  currentKeyDigest,
+  keyDigestMatches: pkg.scoringKey?.sha256 === currentKeyDigest,
   exportManifestVersion: rec.manifestVersion ?? null,
   keyManifestVersion: key.manifestVersion ?? null,
   exportSessionFormat: rec.sessionFormat ?? null,
@@ -62,6 +83,27 @@ const identity = {
   configVersion: key.items[0]?.configVersion ?? null,
   problems: [],
 };
+
+if (identity.exportPackageDigest === null) {
+  identity.problems.push(
+    'export carries no releasePackageDigest; it predates frozen identity binding '
+    + 'and cannot be bound to a specific archive',
+  );
+} else if (identity.exportPackageDigest !== pkg.packageDigest) {
+  identity.packageDigestMatches = false;
+  identity.problems.push(
+    `release package mismatch: export "${identity.exportPackageDigest.slice(0, 16)}..." `
+    + `vs current "${pkg.packageDigest.slice(0, 16)}..."`,
+  );
+} else {
+  identity.packageDigestMatches = true;
+}
+if (!identity.keyDigestMatches) {
+  identity.problems.push(
+    'the scoring key on disk is not the one recorded in the release package; '
+    + 'a current key must never be silently substituted',
+  );
+}
 if (identity.keyManifestVersion === null) {
   identity.problems.push('key does not record a manifestVersion; rebuild with build-stimuli.mjs');
 } else if (identity.exportManifestVersion !== identity.keyManifestVersion) {
@@ -87,24 +129,32 @@ if (identity.problems.length && !allowMismatch) {
 // --- 1. withdrawal ---------------------------------------------------------
 const withdrawn = rec.withdrawn === true;
 
+const pkgStimuli = new Map((pkg.stimuli ?? []).map((s) => [s.stimulusId, s]));
 const rows = [];
 const counts = { matched: 0, unmatched: 0, integrityMismatch: 0 };
+
+// A missing or mismatched identity must PREVENT primary model-agreement use,
+// even when the operator overrides the abort to inspect the data.
+const identityOk = identity.problems.length === 0;
 
 for (const r of rec.responses) {
   const k = byId.get(r.stimulusId);
   const isMatched = Boolean(k);
   if (isMatched) counts.matched++; else counts.unmatched++;
 
-  // Integrity: a matched response must refer to the same archived layout.
+  // Integrity: a matched response must refer to the same archived layout, and
+  // that layout must be the one in the release package.
   let integrityAgrees = null;
   if (isMatched && r.stimulusIntegrity !== undefined && r.stimulusIntegrity !== null) {
-    integrityAgrees = r.stimulusIntegrity === k.integrity;
+    const pkgEntry = pkgStimuli.get(r.stimulusId);
+    integrityAgrees = r.stimulusIntegrity === k.integrity
+      && (!pkgEntry || pkgEntry.fnv === r.stimulusIntegrity);
     if (!integrityAgrees) counts.integrityMismatch++;
   }
 
   const scoreAvailable = isMatched ? k.scoreAvailable : null;
   // modelAgreement requires: a match, a model score, a valid trial, and no withdrawal.
-  const modelAgreement = withdrawn
+  const modelAgreement = (withdrawn || !identityOk)
     ? false
     : Boolean(isMatched && scoreAvailable && r.trialValid && integrityAgrees !== false);
   const ratingOnly = withdrawn ? false : (r.analysisEligible?.ratingOnly ?? r.trialValid ?? false);
@@ -149,7 +199,21 @@ const joined = {
       ? 'ALL responses are ineligible for every analysis (model-agreement and rating-only).'
       : 'not applicable',
   },
-  identity: { ...identity, accepted: identity.problems.length === 0, overridden: allowMismatch && identity.problems.length > 0 },
+  identity: {
+    ...identity,
+    accepted: identityOk,
+    overridden: allowMismatch && !identityOk,
+    effectOnAnalysis: identityOk
+      ? 'identity bound; model-agreement eligibility computed normally'
+      : 'IDENTITY NOT BOUND - every response is excluded from model-agreement use. '
+        + 'Rating-only eligibility is unaffected and raw responses are preserved.',
+  },
+  diagnosticRescoring: {
+    performed: false,
+    note: 'No cross-version rescoring was performed. If a future run rescores these '
+      + 'layouts under a different model version, it must be labelled a '
+      + 'model-comparison diagnostic and must not replace these rows.',
+  },
   provenance: {
     exportFile: exportPath,
     keyVersion: key.keyVersion,
@@ -174,6 +238,18 @@ const joined = {
 };
 
 if (outPath) {
+  // Never overwrite the raw export, and never overwrite an existing join.
+  const rawResolved = resolve(exportPath);
+  for (const candidate of [outPath, outPath.replace(/\.json$/, '.csv')]) {
+    if (resolve(candidate) === rawResolved) {
+      console.error(`refusing to write over the raw export: ${exportPath}`);
+      process.exit(4);
+    }
+    if (existsSync(candidate)) {
+      console.error(`refusing to overwrite an existing file: ${candidate}`);
+      process.exit(4);
+    }
+  }
   writeFileSync(outPath, JSON.stringify(joined, null, 2));
   const cols = Object.keys(rows[0] ?? {});
   writeFileSync(outPath.replace(/\.json$/, '.csv'),
@@ -188,6 +264,8 @@ console.log(`  rating-only eligible      : ${joined.counts.ratingOnlyEligible}`)
 console.log(`  model-agreement eligible  : ${joined.counts.modelAgreementEligible}`);
 console.log(`  RETAINED despite no score : ${joined.counts.retainedDespiteNoScore}`);
 console.log(`  withdrawn                 : ${withdrawn}${withdrawn ? '  -> all responses ineligible' : ''}`);
-console.log(`  identity                  : ${joined.identity.accepted ? 'bound' : 'PROBLEMS: ' + identity.problems.join('; ')}`);
+console.log(`  identity                  : ${joined.identity.accepted ? 'bound to ' + pkg.packageId : 'NOT BOUND'}`);
+if (!identityOk) for (const p_ of identity.problems) console.log(`     - ${p_}`);
+console.log(`  model-agreement use       : ${identityOk ? 'permitted' : 'BLOCKED by identity failure'}`);
 console.log(`  approval                  : ${joined.approval}`);
 if (outPath) console.log(`\nwrote ${outPath} and ${outPath.replace(/\.json$/, '.csv')}`);
