@@ -23,8 +23,15 @@ import vm from 'node:vm';
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const REFERENCE_FILE = join(HERE, 'index.bf617e4.html');
 export const REFERENCE_COMMIT = 'bf617e4712079e26043ea62b2e797844680e9bf3';
+// Pinned over the REPOSITORY-CANONICAL bytes (LF), which is what every checkout
+// now produces: see /.gitattributes. The previous pin,
+// 2fa6cbc12ee6bb01732523a7b2c91d97c5ac8909d901302a70acb1e389999e5e, was taken
+// over a Windows working copy whose line endings git had expanded to CRLF, so it
+// could only ever match on Windows and would have failed on a Linux runner. The
+// two digests cover byte-identical content: stripping CRLF from the old form
+// yields exactly this file, and the archived reference has not been edited.
 export const REFERENCE_SHA256 =
-  '2fa6cbc12ee6bb01732523a7b2c91d97c5ac8909d901302a70acb1e389999e5e';
+  '18e74ac357b31b8d3e46e812e0fda2ac171dda832d0121c0c04bdf888f4f2d0a';
 
 function extractScript(html) {
   const open = html.indexOf('<script>');

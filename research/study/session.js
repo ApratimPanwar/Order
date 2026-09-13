@@ -42,9 +42,21 @@ export class SessionError extends Error {
 
 export const RATING_BOUNDS = Object.freeze({ min: 1, max: 7, commentMaxLength: 2000 });
 export const INSTRUMENT_VERSION = 'blind-rating-0.1.0-development';
-export const INSTRUCTIONS_VERSION = 'instructions-1';
-export const ACKNOWLEDGEMENT_VERSION = 'acknowledgement-1';
+export const INSTRUCTIONS_VERSION = 'instructions-2';
+export const ACKNOWLEDGEMENT_VERSION = 'acknowledgement-2';
 export const RELEASE_STATUS = 'DEVELOPMENT PILOT - NOT A DATA COLLECTION RELEASE';
+
+/**
+ * Release mode comes from the frozen release package, never from this file.
+ * `development` marks everything produced as rehearsal data that must be kept
+ * out of the study dataset; `participant` is only ever set by a package built
+ * from a recorded approval record.
+ */
+export const RELEASE_MODES = Object.freeze({
+  development: Object.freeze({ mode: 'development', dataClass: 'development-rehearsal' }),
+  participant: Object.freeze({ mode: 'participant', dataClass: 'study-data' }),
+});
+export const DEFAULT_RELEASE_MODE = 'development';
 
 import { SessionStore, STORAGE_KEY as STORE_KEY, PersistenceError } from './persistence.js';
 
@@ -111,6 +123,14 @@ export class RatingSession {
       // is what an export is bound to.
       releasePackageId: releasePackage?.packageId ?? null,
       releasePackageDigest: releasePackage?.packageDigest ?? null,
+      // An unmarked package is development by default. A rehearsal can never
+      // be promoted to study data by omission (deployment item 26).
+      releaseMode: RELEASE_MODES[releasePackage?.releaseMode] ? releasePackage.releaseMode : DEFAULT_RELEASE_MODE,
+      dataClass: (RELEASE_MODES[releasePackage?.releaseMode] ?? RELEASE_MODES[DEFAULT_RELEASE_MODE]).dataClass,
+      // The approved return channel, verbatim from the package. Never invented
+      // here: a null channel means the participant has not been told where to
+      // send the file, and the interface must say exactly that.
+      returnChannel: releasePackage?.returnChannel ?? null,
       participantId: pid,
       orderSeed: String(seed),
       order: reproducibleOrder(ids, seed),
@@ -429,11 +449,20 @@ export class RatingSession {
       exportFormat: 'rating-export-1',
       exportedAt: new Date().toISOString(),
       transmitted: false,
+      // Rehearsal output is labelled in the file itself so it cannot be merged
+      // into the study dataset by accident (deployment item 26).
+      dataClass: this.state.dataClass ?? RELEASE_MODES[DEFAULT_RELEASE_MODE].dataClass,
+      releaseMode: this.state.releaseMode ?? DEFAULT_RELEASE_MODE,
       collection: {
         mechanism: 'local-download-only',
         approvedEndpoint: null,
-        note: 'No collection endpoint is configured or approved. This file was saved '
-          + 'locally by the participant. Downloading it is NOT a server submission.',
+        // The channel the participant was actually shown, or null. A join must
+        // not assume any particular route was used.
+        returnChannel: this.state.returnChannel ?? null,
+        note: 'No collection endpoint exists. This file was saved locally by the '
+          + 'participant; downloading it is NOT a submission and does not send it '
+          + 'anywhere. Any return of this file happens outside the application, '
+          + 'through a channel that may itself attach identifying information.',
       },
       releaseStatus: this.state.releaseStatus,
       instrumentVersion: this.state.instrumentVersion,

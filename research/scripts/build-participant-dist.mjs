@@ -12,6 +12,10 @@
  */
 import { mkdirSync, rmSync, existsSync, copyFileSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { createHash } from 'node:crypto';
+
+const expectIdx = process.argv.indexOf('--expect-digest');
+const EXPECT_DIGEST = expectIdx === -1 ? null : process.argv[expectIdx + 1];
 
 const toPosix = (p) => p.split(String.fromCharCode(92)).join('/');
 
@@ -24,6 +28,15 @@ mkdirSync(join(OUT, 'stimuli'), { recursive: true });
 
 const FILES = ['index.html', 'session.js', 'persistence.js', 'render-layout.js', 'release-package.json'];
 for (const f of FILES) copyFileSync(join(SRC, f), join(OUT, f));
+
+// Consent / information / debrief assets ship the moment they exist.
+const OPTIONAL = ['consent.html', 'participant-information.html', 'protocol.json', 'debrief.html'];
+const shippedOptional = OPTIONAL.filter((f) => existsSync(join(SRC, f)));
+for (const f of shippedOptional) copyFileSync(join(SRC, f), join(OUT, f));
+
+// GitHub Pages runs Jekyll over an artifact unless told not to; that silently
+// drops files and directories beginning with an underscore.
+writeFileSync(join(OUT, '.nojekyll'), '');
 
 const manifest = JSON.parse(readFileSync(join(SRC, 'stimuli', 'manifest.json'), 'utf8'));
 copyFileSync(join(SRC, 'stimuli', 'manifest.json'), join(OUT, 'stimuli', 'manifest.json'));
@@ -48,6 +61,37 @@ for (const f of built) {
     if (text.includes(term)) findings.push(`"${term}" appears in ${f}`);
   }
 }
+// The artifact root must be servable as-is: index.html at the top level, and
+// no root-absolute URLs, which break under a repository subpath such as
+// https://<owner>.github.io/<repo>/ (deployment item 15).
+if (!existsSync(join(OUT, 'index.html'))) findings.push('index.html is not at the artifact root');
+for (const f of built.filter((x) => x.endsWith('.html'))) {
+  const text = readFileSync(join(OUT, f), 'utf8');
+  for (const m of text.matchAll(/(?:src|href)="(\/[^"/][^"]*)"/g)) {
+    findings.push(`root-absolute URL "${m[1]}" in ${f} will not resolve under a repository subpath`);
+  }
+  for (const m of text.matchAll(/from '(\/[^']+)'/g)) {
+    findings.push(`root-absolute import "${m[1]}" in ${f} will not resolve under a repository subpath`);
+  }
+}
+
+// The deployed package must be the frozen one, byte for byte.
+const shippedPkg = JSON.parse(readFileSync(join(OUT, 'release-package.json'), 'utf8'));
+const privatePath = join(ROOT, 'study-private', 'release-package.json');
+if (existsSync(privatePath)) {
+  const priv = JSON.parse(readFileSync(privatePath, 'utf8'));
+  if (priv.packageDigest !== shippedPkg.packageDigest) {
+    findings.push(`bundle package digest ${shippedPkg.packageDigest.slice(0, 16)} does not match the `
+      + `researcher-side record ${String(priv.packageDigest).slice(0, 16)}`);
+  }
+} else {
+  findings.push('no researcher-side release-package.json to verify the bundle against');
+}
+if (EXPECT_DIGEST && shippedPkg.packageDigest !== EXPECT_DIGEST) {
+  findings.push(`bundle package digest ${shippedPkg.packageDigest} does not match the expected `
+    + `frozen digest ${EXPECT_DIGEST}`);
+}
+
 // Every import the app makes must resolve INSIDE the bundle.
 const html = readFileSync(join(OUT, 'index.html'), 'utf8');
 for (const m of html.matchAll(/from '\.\/([^']+)'/g)) {
@@ -65,14 +109,25 @@ const report = {
   out: toPosix(relative(ROOT, OUT)),
   fileCount: built.length,
   files: built,
-  releasePackageId: JSON.parse(readFileSync(join(OUT, 'release-package.json'), 'utf8')).packageId,
+  releasePackageId: shippedPkg.packageId,
+  releasePackageDigest: shippedPkg.packageDigest,
+  releaseMode: shippedPkg.releaseMode ?? 'development',
+  returnChannel: shippedPkg.returnChannel ?? null,
+  expectedDigest: EXPECT_DIGEST,
+  optionalAssets: shippedOptional,
+  // A per-file digest of exactly what would be served, so the live site can be
+  // checked byte for byte against what was audited (deployment item 24).
+  assetDigests: Object.fromEntries(built.map((f) =>
+    [f, createHash('sha256').update(readFileSync(join(OUT, f))).digest('hex')])),
   findings,
   clean: findings.length === 0,
 };
 writeFileSync(join(ROOT, 'results', 'participant-dist-audit.json'), JSON.stringify(report, null, 2));
 
 console.log(`participant bundle -> ${report.out}  (${built.length} files)`);
-console.log(`release package    : ${report.releasePackageId}`);
+console.log(`release package    : ${report.releasePackageId}  [mode: ${report.releaseMode}]`);
+console.log(`package digest     : ${report.releasePackageDigest}`);
+console.log(`return channel     : ${report.returnChannel ? report.returnChannel.kind : 'NONE SPECIFIED'}`);
 if (findings.length) {
   console.log('\nFINDINGS:');
   for (const f of findings) console.log(`  - ${f}`);

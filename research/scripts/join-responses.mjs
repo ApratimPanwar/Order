@@ -137,6 +137,14 @@ const counts = { matched: 0, unmatched: 0, integrityMismatch: 0 };
 // even when the operator overrides the abort to inspect the data.
 const identityOk = identity.problems.length === 0;
 
+// Dataset partition. An export that does not explicitly declare itself study
+// data is development rehearsal: a file written before `dataClass` existed, or
+// one produced against a development package, must never drift into the main
+// dataset by omission (deployment item 26).
+const declaredClass = rec.dataClass ?? null;
+const isStudyData = declaredClass === 'study-data';
+const datasetPartition = isStudyData ? 'study' : 'development-rehearsal';
+
 for (const r of rec.responses) {
   const k = byId.get(r.stimulusId);
   const isMatched = Boolean(k);
@@ -164,6 +172,12 @@ for (const r of rec.responses) {
   r.joinStatus = isMatched ? 'matched' : 'unmatched-stimulus';
   if (withdrawn) r.exclusionRule = 'X2-withdrawn';
   else if (isMatched && integrityAgrees === false) r.exclusionRule = 'X1-integrity-mismatch';
+  else if (!isStudyData) r.exclusionRule = 'X3-development-rehearsal';
+  r.datasetPartition = datasetPartition;
+  // The single filter the main analysis uses. Trial-level eligibility above
+  // still describes the trial; this says whether the row belongs to the study
+  // dataset at all.
+  r.mainStudyEligible = isStudyData && (modelAgreement || ratingOnly);
 
   rows.push({
     participantId: rec.participantId,
@@ -178,6 +192,8 @@ for (const r of rec.responses) {
     scoreAvailable: scoreAvailable === null ? '' : scoreAvailable,
     modelAgreementEligible: modelAgreement,
     ratingOnlyEligible: ratingOnly,
+    datasetPartition,
+    mainStudyEligible: r.mainStudyEligible,
     exclusionRule: r.exclusionRule ?? '',
     invalidReason: r.invalidReason ?? '',
     // Unmatched rows carry no condition or score - empty, never 0, never guessed.
@@ -192,6 +208,17 @@ const joined = {
   joinFormat: 'rating-join-2',
   joinedAt: new Date().toISOString(),
   approval: 'DEVELOPMENT CANDIDATE - NOT APPROVED. v1 scores here are not approved measurements.',
+  dataset: {
+    partition: datasetPartition,
+    declaredDataClass: declaredClass,
+    releaseMode: rec.releaseMode ?? null,
+    includedInMainStudy: isStudyData,
+    effect: isStudyData
+      ? 'study data; rows enter the main dataset subject to the eligibility flags'
+      : 'DEVELOPMENT REHEARSAL - every row is excluded from the main study dataset '
+        + '(exclusionRule X3-development-rehearsal). Rehearsal output exercises the '
+        + 'pipeline; it is not evidence about the model or about participants.',
+  },
   withdrawal: {
     withdrawn,
     policy: rec.withdrawalPolicy ?? null,
@@ -268,4 +295,5 @@ console.log(`  identity                  : ${joined.identity.accepted ? 'bound t
 if (!identityOk) for (const p_ of identity.problems) console.log(`     - ${p_}`);
 console.log(`  model-agreement use       : ${identityOk ? 'permitted' : 'BLOCKED by identity failure'}`);
 console.log(`  approval                  : ${joined.approval}`);
+console.log(`  dataset partition         : ${datasetPartition}` + (isStudyData ? '' : '  -> EXCLUDED from the main study dataset'));
 if (outPath) console.log(`\nwrote ${outPath} and ${outPath.replace(/\.json$/, '.csv')}`);

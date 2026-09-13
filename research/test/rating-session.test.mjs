@@ -242,8 +242,14 @@ test('export is a LOCAL record and never claims submission', () => {
   assert.equal(rec.transmitted, false);
   assert.equal(rec.collection.mechanism, 'local-download-only');
   assert.equal(rec.collection.approvedEndpoint, null);
-  assert.match(rec.collection.note, /NOT a server submission/);
+  assert.match(rec.collection.note, /NOT a submission/);
+  assert.match(rec.collection.note, /may itself attach identifying information/);
+  assert.equal(rec.collection.returnChannel, null, 'no return channel may be invented');
   assert.match(rec.releaseStatus, /NOT A DATA COLLECTION RELEASE/);
+  // An unmarked package is development: rehearsal output must never default to
+  // study data (deployment item 26).
+  assert.equal(rec.releaseMode, 'development');
+  assert.equal(rec.dataClass, 'development-rehearsal');
   const raw = JSON.stringify(rec).toLowerCase();
   assert.ok(!raw.includes('"submitted"'), 'must not claim submission');
   assert.ok(!raw.includes('uploaded'), 'must not claim upload');

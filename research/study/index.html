@@ -30,10 +30,38 @@
   .err { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b;
          padding:8px 12px; border-radius:6px; font-size:13px; margin-bottom:12px; }
   ul { padding-left: 20px; }
+  h2 { font-size: 15px; margin: 18px 0 4px; }
+  ol.steps { padding-left: 20px; }
+  ol.steps > li { margin-bottom: 10px; }
+  .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+          background:#f3f4f6; border:1px solid var(--line); border-radius:4px;
+          padding:2px 6px; font-size:13px; }
+  .callout { background:#f9fafb; border:1px solid var(--line); border-left:3px solid var(--accent);
+             border-radius:4px; padding:10px 12px; margin:10px 0; font-size:14px; }
+  .callout.warn { border-left-color: var(--warn); background:#fffbeb; }
 </style>
 
 <div class="status" id="releaseStatus">Loading…</div>
 <div id="errors"></div>
+
+<!-- UNSUPPORTED ENVIRONMENT ------------------------------------------------ -->
+<section id="unsupportedPanel" class="panel" hidden>
+  <h1>This browser cannot run the task safely</h1>
+  <p>The task needs two things from your browser to make sure an answer you give
+     is never lost and never overwritten by another open copy of this page.
+     At least one of them is unavailable here, so <strong>nothing has been
+     started and nothing is being recorded</strong>.</p>
+  <ul id="unsupportedList"></ul>
+  <p>What usually helps:</p>
+  <ul>
+    <li>Use a recent version of Chrome, Edge, Firefox or Safari, in a normal
+        (not private/incognito) window.</li>
+    <li>Allow this site to store data — some privacy settings and extensions
+        block it entirely.</li>
+    <li>Open the page over <span class="code">https://</span>.</li>
+  </ul>
+  <p class="muted" id="unsupportedDetail"></p>
+</section>
 
 <!-- ACKNOWLEDGEMENT ------------------------------------------------------- -->
 <section id="ackPanel" class="panel" hidden>
@@ -44,15 +72,49 @@
      answer in your own words.</p>
   <p>There are no right or wrong answers. The compositions were produced in
      several different ways, and we are not told which is which while rating.</p>
+  <h2>What this application records</h2>
   <ul>
-    <li>Nothing identifying is collected — no name, no email, no contact details.
-        Your session is labelled with a random code.</li>
-    <li>Your answers are stored <strong>only in this browser</strong> until you
-        choose to download them. Nothing is sent anywhere.</li>
-    <li>You can stop at any time, and you can erase everything you have entered.</li>
-    <li>This is a <strong>development test of the software</strong>, not a research
-        study. Responses collected here are for checking that the tool works.</li>
+    <li>Your two ratings for each composition, your optional notes, and when each
+        composition was shown.</li>
+    <li>A <strong>random study code</strong> such as
+        <span class="code">p-1a2b3c4d5e6f7a8b</span>, generated in your browser.
+        No name, no email, no contact details, no device fingerprint.</li>
+    <li>Your answers stay <strong>only in this browser</strong> until you choose
+        to download them. The application sends nothing, anywhere, at any point.</li>
   </ul>
+
+  <h2>What this application cannot control</h2>
+  <div class="callout">
+    <p style="margin-top:0">Visiting any web page leaves traces outside the page
+       itself. This page is served by a web host, and web hosts ordinarily record
+       technical information about each request — typically including your
+       <strong>IP address</strong>, browser and the time of access. We do not
+       receive, request or analyse those logs, and we cannot switch them off.
+       <strong>We therefore cannot tell you that your visit is anonymous</strong>
+       — only that this application itself records none of it.</p>
+    <p style="margin-bottom:0">Likewise, if you later send the downloaded file
+       back, it travels through whatever channel you use, and
+       <strong>that channel may attach identifying information</strong> — an
+       email address, an account name, a filename. The contents of the file do
+       not, but the delivery of it may.</p>
+  </div>
+
+  <h2>Stopping, erasing and withdrawing</h2>
+  <ul>
+    <li><strong>At any point:</strong> <em>Stop and withdraw</em> ends the task.
+        Anything you already answered is kept on this device but marked withdrawn
+        and excluded from analysis.</li>
+    <li><strong>Before you send the file back:</strong> <em>Erase everything</em>
+        removes it all from this browser. Nothing then exists anywhere, and there
+        is nothing left to withdraw later.</li>
+    <li><strong>After you have sent the file back:</strong> it can still be
+        removed, because your study code is inside it. Write the code down from
+        the final screen and quote it when you ask. Without the code we cannot
+        identify which file is yours — there is nothing else in it that points
+        to you. <span id="withdrawalContact"></span></li>
+  </ul>
+
+  <p class="muted" id="ackStatusNote"></p>
   <div class="row">
     <button class="primary" id="ackBtn">I understand — continue</button>
     <button id="ackDecline">No thanks</button>
@@ -85,8 +147,32 @@
 <section id="donePanel" class="panel" hidden>
   <h1 id="doneTitle">Finished</h1>
   <p id="doneMsg"></p>
+
+  <div id="returnSteps">
+    <h2>What to do next</h2>
+    <ol class="steps">
+      <li><strong>Download the response file.</strong> It saves
+          <span class="code" id="fileNameHint"></span> to this device.
+          <div class="row" style="margin-top:8px">
+            <button class="primary" id="downloadBtn">Download my responses</button>
+          </div></li>
+      <li><strong>Return the file through the channel below.</strong>
+          <div class="callout" id="returnChannelBox"></div></li>
+      <li><strong>Downloading alone does not submit anything.</strong>
+          <div class="callout warn">Saving the file to your device sends it
+            nowhere. Nothing has been transmitted, and no one has received it.
+            Until you complete step 2 yourself, your responses exist only on this
+            device. We cannot confirm receipt of a file we have not been sent.</div></li>
+    </ol>
+
+    <h2>Your study code</h2>
+    <p>Your code is <span class="code" id="studyCode"></span>. It is also inside
+       the file. Keep it if you may want your responses removed later — quote it
+       in your request. If you erase now instead, nothing is kept and no code is
+       needed.</p>
+  </div>
+
   <div class="row">
-    <button class="primary" id="downloadBtn">Download my responses</button>
     <button id="eraseBtn">Erase everything</button>
   </div>
   <p class="muted" id="downloadNote"></p>
@@ -96,7 +182,7 @@
   import { RatingSession, RELEASE_STATUS, INSTRUMENT_VERSION,
            INSTRUCTIONS_VERSION, ACKNOWLEDGEMENT_VERSION, defaultStorage,
            SessionError, STORAGE_KEY } from './session.js';
-  import { SessionStore } from './persistence.js';
+  import { SessionStore, probeEnvironment } from './persistence.js';
   import { drawLayout, contentHash } from './render-layout.js';
 
   const $ = (id) => document.getElementById(id);
@@ -107,16 +193,13 @@
     d.className = 'err'; d.textContent = msg; errBox.appendChild(d);
   };
 
-  $('releaseStatus').textContent = RELEASE_STATUS
-    + ' · responses stay in this browser until you download them';
+  // Neutral until the environment gate and the frozen package have been read:
+  // the banner must state the real release mode, not a source constant.
+  $('releaseStatus').textContent = 'Checking this browser…';
   $('ackVersions').textContent =
     `Instrument ${INSTRUMENT_VERSION} · instructions ${INSTRUCTIONS_VERSION} · acknowledgement ${ACKNOWLEDGEMENT_VERSION}`;
 
   const storage = defaultStorage();
-  if (!storage) {
-    showError('This browser is not allowing local storage, so your progress cannot be '
-      + 'saved if you reload. You can still complete the task in one sitting and download the result.');
-  }
 
   let manifest = null;
   let releasePackage = null;
@@ -204,6 +287,41 @@
     show('trialPanel', true);
   }
 
+  /**
+   * Renders the return channel EXACTLY as the frozen release package states it.
+   * A null channel is reported as a null channel: no destination is invented,
+   * and the participant is told not to send the file anywhere yet.
+   */
+  function renderReturnChannel() {
+    const box = $('returnChannelBox');
+    const ch = releasePackage && releasePackage.returnChannel;
+    box.textContent = '';
+    if (!ch || !ch.instructions) {
+      box.classList.add('warn');
+      const h = document.createElement('p');
+      h.style.marginTop = '0';
+      h.innerHTML = '<strong>No return channel has been specified.</strong>';
+      const b = document.createElement('p');
+      b.style.marginBottom = '0';
+      b.textContent = 'Please do not send it anywhere.'
+        + ' This build is a rehearsal of the software, not a data collection release,'
+        + ' so there is nowhere to send the file.'
+        + ' If you were asked to try the tool, tell whoever asked you that you have'
+        + ' finished; they will say what to do with the file, if anything.';
+      box.append(h, b);
+      return;
+    }
+    box.classList.remove('warn');
+    const kind = document.createElement('p');
+    kind.style.marginTop = '0';
+    kind.innerHTML = '<strong>Approved return channel: </strong>';
+    kind.append(document.createTextNode(String(ch.kind)));
+    const how = document.createElement('p');
+    how.style.marginBottom = '0';
+    how.textContent = String(ch.instructions);
+    box.append(kind, how);
+  }
+
   function finish() {
     show('trialPanel', false);
     show('donePanel', true);
@@ -212,9 +330,12 @@
     $('doneMsg').textContent = withdrawn
       ? 'You have stopped. Anything you already answered is still stored in this browser only.'
       : `Thank you. You rated ${session.state.responseCount ?? Object.keys(session.state.responses).length} composition(s).`;
+    $('studyCode').textContent = session.state.participantId;
+    $('fileNameHint').textContent = `order-rating-${session.state.participantId}.json`;
+    renderReturnChannel();
     $('downloadNote').textContent =
-      'Downloading saves a file to your device. It does not send anything to a server — '
-      + 'no collection endpoint exists for this development build.';
+      'The application has no collection endpoint. Nothing you have entered has left '
+      + 'this device, and nothing will unless you send the file yourself.';
   }
 
   $('ackBtn').addEventListener('click', async () => {
@@ -310,8 +431,11 @@
   $('eraseBtn').addEventListener('click', async () => {
     await session.eraseVia(store);
     $('doneTitle').textContent = 'Erased';
-    $('doneMsg').textContent = 'Everything you entered has been removed from this browser.';
+    $('doneMsg').textContent = 'Everything you entered has been removed from this'
+      + ' browser. There is nothing left to download or return, and nothing to'
+      + ' withdraw later.';
     $('downloadBtn').disabled = true;
+    show('returnSteps', false);
   });
 
   // Another tab wrote to the shared key. Pick up its state rather than racing it.
@@ -325,8 +449,46 @@
     }
   });
 
-  // --- boot: resume if a valid save exists ---------------------------------
+  /**
+   * STARTUP ENVIRONMENT GATE.
+   *
+   * Both mechanisms are required before anything is recorded. Persistent
+   * storage that does not round-trip means an answer is lost on reload; a
+   * missing Web Locks API means `commit()` degrades to the lease alone, which
+   * is a policy rather than a critical section and has no browser evidence.
+   * Rather than collect data through an untested path, the task refuses to
+   * start and says why.
+   */
+  function reportUnsupported(probe) {
+    const labels = {
+      persistentStorage: 'Saving data in this browser',
+      webLocks: 'Coordinating between open copies of this page',
+    };
+    const list = $('unsupportedList');
+    list.textContent = '';
+    for (const key of probe.missing) {
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>${labels[key] ?? key}</strong> is not available.`;
+      list.appendChild(li);
+    }
+    $('unsupportedDetail').textContent =
+      'Technical detail: ' + probe.missing
+        .map((k) => `${k}=${probe.checks[k].reason}${probe.checks[k].detail ? ` (${probe.checks[k].detail})` : ''}`)
+        .join(', ');
+    show('unsupportedPanel', true);
+    $('releaseStatus').textContent = 'UNSUPPORTED ENVIRONMENT - nothing is being recorded';
+  }
+
+  // --- boot: gate the environment, then resume if a valid save exists -------
   (async () => {
+    const probe = await probeEnvironment({ storage, locks: globalThis.navigator?.locks });
+    window.__environment = probe;
+    if (!probe.ok) {
+      reportUnsupported(probe);
+      document.body.dataset.ready = 'unsupported';
+      return;                       // no session, no store, no recording
+    }
+
     try {
       manifest = await loadManifest();
       releasePackage = await loadReleasePackage();
@@ -335,7 +497,30 @@
       return;
     }
 
-    store = new SessionStore({ storage });
+    // The banner states the release mode from the FROZEN package, not from a
+    // constant in the source, so a development build always announces itself.
+    const participantRelease = releasePackage.releaseMode === 'participant';
+    $('releaseStatus').textContent = participantRelease
+      ? 'Your answers stay in this browser until you download them'
+      : RELEASE_STATUS + ' - responses collected here are development-rehearsal data, '
+        + 'not study data, and stay in this browser until you download them';
+    // How to ask for removal. Taken from the approved return channel, because
+    // a participant can only reach us the way they were told to. Never invented.
+    const ch = releasePackage.returnChannel;
+    $('withdrawalContact').textContent = ch && ch.contact
+      ? `To ask, contact: ${ch.contact}`
+      : (ch && ch.instructions
+        ? 'To ask, use the same route you used to return the file (shown when you finish).'
+        : 'No contact route has been set up for this build, and no file should be '
+          + 'sent back from it, so there is nothing to ask to have removed.');
+
+    $('ackStatusNote').textContent = participantRelease
+      ? ''
+      : 'This is a development test of the software, not a research study. Anything '
+        + 'you enter is used only to check that the tool works and is excluded from '
+        + 'the study dataset.';
+
+    store = new SessionStore({ storage, locks: globalThis.navigator?.locks });
 
     // Single-active-tab policy (A). A second tab is read-only and says so,
     // rather than competing for the same record.
@@ -381,6 +566,10 @@
         orderSeed: session.state.orderSeed,
         order: session.state.order,
         storageAvailable: !!storage,
+        environment: probe,
+        releaseMode: session.state.releaseMode,
+        dataClass: session.state.dataClass,
+        returnChannel: session.state.returnChannel,
         readOnly,
         isOwner: store ? store.isOwner() : null,
         releasePackageId: session.state.releasePackageId,

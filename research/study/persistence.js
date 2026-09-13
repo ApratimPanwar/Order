@@ -244,3 +244,74 @@ export class SessionStore {
     return out;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * ENVIRONMENT PROBE
+ *
+ * The participant release requires BOTH mechanisms to be genuinely working,
+ * not merely present as properties:
+ *
+ *   - persistent storage must round-trip a value, because an answer that is
+ *     not written is an answer that is lost on reload;
+ *   - the Web Locks API must actually grant a lock, because the lease alone is
+ *     a policy, not a critical section, and the lease-only path has Node tests
+ *     but no browser evidence.
+ *
+ * Both are probed by USE, not by feature detection. `navigator.locks` exists
+ * and throws in some sandboxed and non-secure contexts; `localStorage` exists
+ * and throws under "block all cookies" and in Safari private mode.
+ * ------------------------------------------------------------------------- */
+
+export const PROBE_KEY = 'order-blind-rating/probe';
+export const PROBE_LOCK = `${LOCK_NAME}-probe`;
+export const PROBE_TIMEOUT_MS = 4000;
+
+/** Probes localStorage by round-tripping a value and removing it again. */
+export function probeStorage(storage) {
+  if (!storage) return { ok: false, reason: 'no-storage-object' };
+  const token = `probe-${randomId()}`;
+  try {
+    storage.setItem(PROBE_KEY, token);
+    const back = storage.getItem(PROBE_KEY);
+    storage.removeItem(PROBE_KEY);
+    if (back !== token) return { ok: false, reason: 'value-did-not-round-trip' };
+    if (storage.getItem(PROBE_KEY) !== null) return { ok: false, reason: 'removal-ignored' };
+    return { ok: true };
+  } catch (e) {
+    try { storage.removeItem(PROBE_KEY); } catch { /* nothing further to do */ }
+    return { ok: false, reason: 'threw', detail: String(e && e.name ? e.name : e) };
+  }
+}
+
+/** Probes the Web Locks API by actually acquiring an exclusive lock. */
+export async function probeLocks(locks, { timeoutMs = PROBE_TIMEOUT_MS } = {}) {
+  if (!locks || typeof locks.request !== 'function') return { ok: false, reason: 'api-absent' };
+  let granted = false;
+  try {
+    const timeout = new Promise((_, reject) => {
+      setTimeout(() => reject(new PersistenceError('lock-probe-timeout')), timeoutMs);
+    });
+    await Promise.race([
+      locks.request(PROBE_LOCK, { mode: 'exclusive' }, async () => { granted = true; }),
+      timeout,
+    ]);
+  } catch (e) {
+    return { ok: false, reason: e && e.code === 'lock-probe-timeout' ? 'timed-out' : 'threw',
+      detail: String(e && e.name ? e.name : e) };
+  }
+  return granted ? { ok: true } : { ok: false, reason: 'callback-never-ran' };
+}
+
+/**
+ * The startup gate. `strict: true` is the participant-release requirement:
+ * if either mechanism fails, the caller must show an unsupported-environment
+ * message and must NOT start recording.
+ */
+export async function probeEnvironment({ storage, locks, strict = true, timeoutMs = PROBE_TIMEOUT_MS } = {}) {
+  const checks = {
+    persistentStorage: probeStorage(storage),
+    webLocks: await probeLocks(locks, { timeoutMs }),
+  };
+  const missing = Object.entries(checks).filter(([, v]) => !v.ok).map(([k]) => k);
+  return { ok: missing.length === 0, strict, checks, missing };
+}

@@ -1,0 +1,9 @@
+# The release package is a SHA-256 content digest of the files on disk. If the
+# working copy's line endings depend on the platform, so does the package
+# identity: a digest computed on Windows (CRLF) will not match the same commit
+# checked out on a Linux runner (LF), and the deployment workflow's
+# --expect-digest assertion would fail for a reason that has nothing to do with
+# the content.
+#
+# Every file in this repository is text, and every checkout gets LF.
+* text=auto eol=lf
