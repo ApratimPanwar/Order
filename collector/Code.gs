@@ -69,7 +69,8 @@ function operatorSetup() {
     props.setProperty(PROP.SHEET_ID, SpreadsheetApp.create('ORDER rating responses (PRIVATE)').getId());
   }
   if (!props.getProperty(PROP.RAW_FOLDER_ID)) {
-    props.setProperty(PROP.RAW_FOLDER_ID, DriveApp.createFolder('ORDER rating uploads (PRIVATE)').getId());
+    // Drive API, not DriveApp: works within the drive.file scope (see Services.gs).
+    props.setProperty(PROP.RAW_FOLDER_ID, driveCreateFolder_('ORDER rating uploads (PRIVATE)', null));
   }
   if (!props.getProperty(PROP.WITHDRAWAL_POLICY)) props.setProperty(PROP.WITHDRAWAL_POLICY, 'mark-ineligible');
   if (!props.getProperty(PROP.ACCEPTING)) props.setProperty(PROP.ACCEPTING, 'false');

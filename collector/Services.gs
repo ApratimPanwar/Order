@@ -61,28 +61,59 @@ function sheetsAdapter_(spreadsheetId) {
   };
 }
 
+/**
+ * Drive through the Drive API v3 Advanced Service, NOT DriveApp.
+ *
+ * DriveApp needs the full `drive` scope (every file in the owner's Drive) even
+ * to create a folder. The Drive API honours `drive.file`, which limits the
+ * script to files and folders it created itself — the private upload folder and
+ * its contents — so the collector never gains access to anything else. Found in
+ * the first live setup run, where DriveApp.createFolder was refused under
+ * `drive.file`.
+ */
+var FOLDER_MIME_ = 'application/vnd.google-apps.folder';
+
+function driveQuote_(s) { return "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'"; }
+
+function driveFind_(parentId, name, mimeType) {
+  var q = 'name = ' + driveQuote_(name) + ' and ' + driveQuote_(parentId) + ' in parents and trashed = false'
+    + (mimeType ? ' and mimeType = ' + driveQuote_(mimeType) : '');
+  var res = Drive.Files.list({ q: q, fields: 'files(id,name)', pageSize: 10, spaces: 'drive' });
+  return res.files || [];
+}
+
+function driveCreateFolder_(name, parentId) {
+  var meta = { name: name, mimeType: FOLDER_MIME_ };
+  if (parentId) meta.parents = [parentId];
+  return Drive.Files.create(meta, null, { fields: 'id' }).id;
+}
+
 function driveAdapter_(rootFolderId) {
   if (!rootFolderId) throw new Error('RAW_FOLDER_ID is not configured; run operatorSetup');
   var areaFolder = function (area) {
-    var root = DriveApp.getFolderById(rootFolderId);
-    var it = root.getFoldersByName(area);
-    return it.hasNext() ? it.next() : root.createFolder(area);
+    var hits = driveFind_(rootFolderId, area, FOLDER_MIME_);
+    return hits.length ? hits[0].id : driveCreateFolder_(area, rootFolderId);
   };
   return {
     findByName: function (area, name) {
-      var it = areaFolder(area).getFilesByName(name);
-      if (!it.hasNext()) return null;
-      var f = it.next();
-      if (it.hasNext()) throw new Error('more than one stored file named ' + name);
-      return { id: f.getId() };
+      var hits = driveFind_(areaFolder(area), name, null);
+      if (!hits.length) return null;
+      if (hits.length > 1) throw new Error('more than one stored file named ' + name);
+      return { id: hits[0].id };
     },
     create: function (area, name, text) {
-      return areaFolder(area).createFile(Utilities.newBlob(text, 'application/json', name)).getId();
+      var blob = Utilities.newBlob(text, 'application/json', name);
+      return Drive.Files.create({ name: name, parents: [areaFolder(area)], mimeType: 'application/json' }, blob, { fields: 'id' }).id;
     },
     readText: function (id) {
-      return DriveApp.getFileById(id).getBlob().getDataAsString('UTF-8');
+      var res = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media', {
+        headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+        muteHttpExceptions: true,
+      });
+      if (res.getResponseCode() !== 200) throw new Error('drive read HTTP ' + res.getResponseCode());
+      return res.getBlob().getDataAsString('UTF-8');
     },
-    trash: function (id) { DriveApp.getFileById(id).setTrashed(true); },
+    trash: function (id) { Drive.Files.update({ trashed: true }, id); },
   };
 }
 

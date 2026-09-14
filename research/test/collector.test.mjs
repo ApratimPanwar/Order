@@ -59,6 +59,8 @@ function makeExport({ ratings = 3, comment = 'fine', withdraw = false, seed } = 
 }
 
 const col = (ctx, name) => ctx.RESPONSE_COLUMNS.indexOf(name);
+const GS_SOURCE_ALL = () => ['Code.gs', 'Config.gs', 'Services.gs', 'Store.gs', 'Validate.gs']
+  .map((f) => readFileSync(join(COLLECTOR, f), 'utf8')).join('\n');
 
 /* ---------------------------------------------------------------------------
  * validation
@@ -468,4 +470,54 @@ test('PAGE: the upload page reports "Received" only for a matching server receip
   assert.ok(html.includes('we cannot promise that sending the file is'));
   assert.ok(!/innerHTML\s*=/.test(html), 'participant-controlled text is never injected as HTML');
   assert.ok(!/type="email"|name="email"|placeholder="[^"]*name/i.test(html), 'no name or email field');
+});
+
+test('SCOPES: the collector never uses DriveApp, which would need access to the whole Drive', () => {
+  // Code only: comments are allowed to explain why DriveApp is not used.
+  const src = GS_SOURCE_ALL().replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  assert.ok(!/\bDriveApp\./.test(src), 'DriveApp requires the full drive scope');
+  const manifest = JSON.parse(readFileSync(join(COLLECTOR, 'appsscript.json'), 'utf8'));
+  assert.deepEqual(manifest.oauthScopes.sort(), [
+    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/script.external_request',
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/userinfo.email',
+  ]);
+  assert.ok(manifest.dependencies.enabledAdvancedServices.some((s) => s.serviceId === 'drive' && s.version === 'v3'));
+});
+
+test('SCOPES: the Drive adapter creates, finds, reads and trashes through the Drive API', () => {
+  const files = new Map();
+  let n = 0;
+  const Drive = {
+    Files: {
+      list: ({ q }) => {
+        const name = /name = '([^']*)'/.exec(q)[1];
+        const parent = /'([^']*)' in parents/.exec(q)[1];
+        return { files: [...files.entries()].filter(([, f]) => f.name === name && f.parent === parent && !f.trashed).map(([id]) => ({ id })) };
+      },
+      create: (meta, blob) => { const id = `d${++n}`; files.set(id, { name: meta.name, parent: meta.parents?.[0] ?? 'root', text: blob ? blob.text : null, trashed: false }); return { id }; },
+      update: (patch, id) => { Object.assign(files.get(id), patch); return { id }; },
+    },
+  };
+  const Utilities = { newBlob: (text) => ({ text }) };
+  const ScriptApp = { getOAuthToken: () => 'token' };
+  const UrlFetchApp = {
+    fetch: (url, opts) => {
+      assert.equal(opts.headers.Authorization, 'Bearer token');
+      const id = decodeURIComponent(/files\/([^?]+)/.exec(url)[1]);
+      return { getResponseCode: () => 200, getBlob: () => ({ getDataAsString: () => files.get(id).text }) };
+    },
+  };
+  const ctx = loadCollector({ Drive, Utilities, ScriptApp, UrlFetchApp });
+  const root = ctx.driveCreateFolder_('ORDER rating uploads (PRIVATE)', null);
+  const drive = ctx.driveAdapter_(root);
+  assert.equal(drive.findByName('raw', "u-1.json"), null);
+  const id = drive.create('raw', 'u-1.json', '{"a":"=1"}');
+  assert.equal(JSON.stringify(drive.findByName('raw', 'u-1.json')), JSON.stringify({ id }));
+  assert.equal(drive.readText(id), '{"a":"=1"}');
+  drive.trash(id);
+  assert.equal(drive.findByName('raw', 'u-1.json'), null);
+  assert.equal([...files.values()].filter((f) => f.name === 'raw').length, 1, 'area folder created once and reused');
+  assert.equal(ctx.driveQuote_("it's"), String.raw`'it\'s'`, 'a quote in a name cannot break out of the Drive query');
 });
