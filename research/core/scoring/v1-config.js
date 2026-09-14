@@ -15,7 +15,13 @@
  * file, from tests passing, or from a default value being present.
  */
 
-export const MODEL_VERSION = 'v1-development-candidate';
+// Revision 2 (2026-09-14): canonical element order (§2.4) and the Kendall tau-b
+// joint-tie correction. Scores recorded under revision 1 — the archived
+// development key, the dev-pilot packages and every results/ file — keep the
+// label 'v1-development-candidate' and are not rewritten; see
+// docs/SCORER-REVISIONS.md.
+export const MODEL_VERSION = 'v1-development-candidate-2';
+export const ARCHIVED_MODEL_VERSIONS = Object.freeze(['v1-development-candidate']);
 export const CONFIG_VERSION = 'v1-config-draft-1';
 export const SPEC_VERSION = 'V1-SPECIFICATION draft-2 (reconciled 2026-09-13)';
 

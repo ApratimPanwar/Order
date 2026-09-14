@@ -11,7 +11,7 @@
  * The bundle is a DEVELOPMENT build. It is not a participant release.
  */
 import { mkdirSync, rmSync, existsSync, copyFileSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const expectIdx = process.argv.indexOf('--expect-digest');
@@ -20,14 +20,20 @@ const EXPECT_DIGEST = expectIdx === -1 ? null : process.argv[expectIdx + 1];
 const toPosix = (p) => p.split(String.fromCharCode(92)).join('/');
 
 const ROOT = join(import.meta.dirname, '..');
-const SRC = join(ROOT, 'study');
-const OUT = join(ROOT, 'dist', 'participant');
+const flag = (name) => { const i = process.argv.indexOf(`--${name}`); return i === -1 ? null : process.argv[i + 1]; };
+const SRC = join(ROOT, 'study');                        // the application itself
+const STIMULI_ROOT = flag('stimuli-root') ? resolve(flag('stimuli-root')) : SRC;
+const PRIVATE_DIR = flag('private-dir') ? resolve(flag('private-dir')) : join(ROOT, 'study-private');
+const PACKAGE = flag('package') ? resolve(flag('package')) : join(SRC, 'release-package.json');
+const OUT = flag('out') ? resolve(flag('out')) : join(ROOT, 'dist', 'participant');
+const AUDIT_OUT = flag('audit-out') ? resolve(flag('audit-out')) : join(ROOT, 'results', 'participant-dist-audit.json');
 
 if (existsSync(OUT)) rmSync(OUT, { recursive: true, force: true });
 mkdirSync(join(OUT, 'stimuli'), { recursive: true });
 
-const FILES = ['index.html', 'session.js', 'persistence.js', 'render-layout.js', 'release-package.json'];
+const FILES = ['index.html', 'session.js', 'persistence.js', 'render-layout.js'];
 for (const f of FILES) copyFileSync(join(SRC, f), join(OUT, f));
+copyFileSync(PACKAGE, join(OUT, 'release-package.json'));
 
 // Consent / information / debrief assets ship the moment they exist.
 const OPTIONAL = ['consent.html', 'participant-information.html', 'protocol.json', 'debrief.html'];
@@ -38,9 +44,9 @@ for (const f of shippedOptional) copyFileSync(join(SRC, f), join(OUT, f));
 // drops files and directories beginning with an underscore.
 writeFileSync(join(OUT, '.nojekyll'), '');
 
-const manifest = JSON.parse(readFileSync(join(SRC, 'stimuli', 'manifest.json'), 'utf8'));
-copyFileSync(join(SRC, 'stimuli', 'manifest.json'), join(OUT, 'stimuli', 'manifest.json'));
-for (const item of manifest.items) copyFileSync(join(SRC, item.file), join(OUT, item.file));
+const manifest = JSON.parse(readFileSync(join(STIMULI_ROOT, 'stimuli', 'manifest.json'), 'utf8'));
+copyFileSync(join(STIMULI_ROOT, 'stimuli', 'manifest.json'), join(OUT, 'stimuli', 'manifest.json'));
+for (const item of manifest.items) copyFileSync(join(STIMULI_ROOT, item.file), join(OUT, item.file));
 
 // --- audit the BUILT bundle, not the source tree ---------------------------
 const walk = (d) => readdirSync(d).flatMap((n) => {
@@ -77,7 +83,7 @@ for (const f of built.filter((x) => x.endsWith('.html'))) {
 
 // The deployed package must be the frozen one, byte for byte.
 const shippedPkg = JSON.parse(readFileSync(join(OUT, 'release-package.json'), 'utf8'));
-const privatePath = join(ROOT, 'study-private', 'release-package.json');
+const privatePath = join(PRIVATE_DIR, 'release-package.json');
 if (existsSync(privatePath)) {
   const priv = JSON.parse(readFileSync(privatePath, 'utf8'));
   if (priv.packageDigest !== shippedPkg.packageDigest) {
@@ -122,7 +128,7 @@ const report = {
   findings,
   clean: findings.length === 0,
 };
-writeFileSync(join(ROOT, 'results', 'participant-dist-audit.json'), JSON.stringify(report, null, 2));
+writeFileSync(AUDIT_OUT, JSON.stringify(report, null, 2));
 
 console.log(`participant bundle -> ${report.out}  (${built.length} files)`);
 console.log(`release package    : ${report.releasePackageId}  [mode: ${report.releaseMode}]`);

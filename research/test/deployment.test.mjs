@@ -15,7 +15,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -379,17 +379,34 @@ test('ARTIFACT: nothing resolves outside the artifact root', () => {
  * 7. THE DEPLOYMENT WORKFLOW
  * ------------------------------------------------------------------------ */
 
-const WORKFLOW = '../.github/workflows/deploy-study-site.yml';
+const SITE_WORKFLOW = 'site-template/.github/workflows/deploy-pages.yml';
+const ORDER_WORKFLOWS = '../.github/workflows';
 
-test('WORKFLOW: the Pages workflow exists and is manual only', () => {
-  const yml = read(WORKFLOW);
-  assert.ok(yml.includes('workflow_dispatch:'), 'must be manually dispatched');
-  assert.ok(!/^on:[\s\S]*?^\s{2}push:/m.test(yml), 'must not deploy on ordinary pushes');
-  assert.ok(!yml.includes('schedule:'), 'must not deploy on a schedule');
+test('WORKFLOW: the Order repository cannot deploy to Pages, so the Composer site is untouched', () => {
+  const dir = join(ROOT, ORDER_WORKFLOWS);
+  const files = existsSync(dir) ? readdirSync(dir) : [];
+  assert.ok(!files.includes('deploy-study-site.yml'), 'the old in-repo Pages deployment is removed');
+  for (const f of files) {
+    const yml = read(`${ORDER_WORKFLOWS}/${f}`);
+    assert.ok(!yml.includes('deploy-pages'), `${f} must not deploy Pages`);
+    assert.ok(!yml.includes('pages: write'), `${f} must not hold Pages permission`);
+    assert.ok(!yml.includes('upload-pages-artifact'), `${f} must not upload a Pages artifact`);
+  }
 });
 
-test('WORKFLOW: it uses a protected environment and least-privilege permissions', () => {
-  const yml = read(WORKFLOW);
+test('WORKFLOW: the site workflow is manual only', () => {
+  const yml = read(SITE_WORKFLOW);
+  // Only the trigger block counts; comments elsewhere may name other triggers.
+  const on = yml.slice(yml.search(/^on:/m), yml.search(/^permissions:/m));
+  assert.ok(on.includes('workflow_dispatch:'), 'must be manually dispatched');
+  for (const trigger of ['push', 'pull_request', 'pull_request_target', 'schedule', 'workflow_run', 'release']) {
+    assert.ok(!new RegExp(`^ {2}${trigger}:`, 'm').test(on), `must not trigger on ${trigger}`);
+  }
+  assert.ok(new RegExp('^ {2}workflow_dispatch:', 'm').test(on), 'the check above is not vacuous');
+});
+
+test('WORKFLOW: the site workflow uses a protected environment and least-privilege permissions', () => {
+  const yml = read(SITE_WORKFLOW);
   assert.ok(yml.includes('environment:'));
   assert.ok(yml.includes('name: github-pages'));
   assert.ok(yml.includes('contents: read'));
@@ -398,30 +415,23 @@ test('WORKFLOW: it uses a protected environment and least-privilege permissions'
   assert.ok(!yml.includes('contents: write'), 'deployment must not need write access to the repository');
 });
 
-test('WORKFLOW: the runtime is pinned and the suite runs before publication', () => {
-  const yml = read(WORKFLOW);
+test('WORKFLOW: the runtime is pinned and the bundle is verified before publication', () => {
+  const yml = read(SITE_WORKFLOW);
   assert.match(yml, /node-version: '\d+\.\d+\.\d+'/, 'Node must be pinned to an exact version');
-  const testStep = yml.indexOf('npm test');
-  const verifyStep = yml.indexOf('verify-specification.mjs');
+  const verifyStep = yml.indexOf('tools/verify-site.mjs');
+  const uploadStep = yml.indexOf('actions/upload-pages-artifact');
   const deployStep = yml.indexOf('actions/deploy-pages');
-  assert.ok(testStep > 0 && verifyStep > 0 && deployStep > 0);
-  assert.ok(testStep < deployStep, 'tests must run before deployment');
-  assert.ok(verifyStep < deployStep, 'the specification verifier must run before deployment');
-});
-
-test('WORKFLOW: it publishes the audited bundle and verifies the frozen package', () => {
-  const yml = read(WORKFLOW);
-  assert.ok(yml.includes('build-participant-dist.mjs'), 'the artifact must be the audited build');
-  assert.ok(yml.includes('--expect-digest'), 'the frozen package digest must be asserted');
-  assert.ok(yml.includes('research/dist/participant'), 'only the participant bundle is uploaded');
-  assert.ok(!yml.includes('build-stimuli.mjs'), 'deployment must never regenerate stimuli');
-  assert.ok(!yml.includes('build-release-package.mjs'), 'deployment must never mint a new package');
+  assert.ok(verifyStep > 0 && uploadStep > verifyStep && deployStep > uploadStep);
+  assert.ok(yml.includes('--expect-digest') && yml.includes('--expect-mode'), 'the frozen identity must be asserted');
+  assert.ok(yml.includes('path: site'), 'only site/ is published');
+  assert.ok(!yml.includes('build-'), 'deployment never builds, regenerates stimuli or mints a package');
+  // The research suite runs in Order, where the source is; the site repository holds none.
+  const checks = read(`${ORDER_WORKFLOWS}/research-checks.yml`);
+  assert.ok(checks.includes('npm test') && checks.includes('verify-specification.mjs'));
 });
 
 test('WORKFLOW: dispatch inputs never reach a shell through interpolation', () => {
-  const yml = read(WORKFLOW);
-  // An input interpolated into a run: body is a script-injection hole. Inputs
-  // must arrive through env: instead.
+  const yml = read(SITE_WORKFLOW);
   for (const line of yml.split(/\r?\n/)) {
     if (line.includes('${{ inputs.') && line.trim().startsWith('run:')) {
       assert.fail(`input interpolated into a run body: ${line.trim()}`);
@@ -431,11 +441,7 @@ test('WORKFLOW: dispatch inputs never reach a shell through interpolation', () =
   assert.ok(yml.includes('"$CONFIRM"'));
 });
 
-test('WORKFLOW: no researcher-side material is uploaded and no token reaches the browser', () => {
-  const yml = read(WORKFLOW);
-  for (const bad of ['study-private', 'results/', 'stimulus-key', 'approvals.json']) {
-    assert.ok(!yml.includes(`path: research/${bad}`), `${bad} must not be uploaded`);
-  }
+test('WORKFLOW: no token reaches the browser bundle', () => {
   const bundle = read('dist/participant/index.html') + read('dist/participant/session.js');
   for (const secret of ['GITHUB_TOKEN', 'secrets.', 'Authorization:', 'api_key', 'apiKey']) {
     assert.ok(!bundle.includes(secret), `${secret} must never appear in browser JavaScript`);
@@ -535,4 +541,34 @@ test('IDENTITY: .gitattributes pins line endings for every file', () => {
   const attrs = readFileSync(join(ROOT, '..', '.gitattributes'), 'utf8');
   assert.match(attrs, /^\* text=auto eol=lf$/m,
     'every checkout must produce the same bytes the digest was computed over');
+});
+
+/* ---------------------------------------------------------------------------
+ * 10. A TAB THAT CANNOT SAVE MUST NOT TAKE ANSWERS (found in the rehearsal)
+ * ------------------------------------------------------------------------ */
+
+test('READ-ONLY: the Next handler refuses before record() when the tab is read-only', () => {
+  const html = read('study/index.html');
+  const handler = html.slice(html.indexOf("$('nextBtn').addEventListener('click'"));
+  const guard = handler.indexOf('if (readOnly)');
+  const record = handler.indexOf('session.record(');
+  assert.ok(guard > 0 && guard < record, 'read-only must be checked before the session is mutated');
+  assert.ok(html.includes("for (const b of document.querySelectorAll('#orderScale button, #appealScale button')) b.disabled = on;"),
+    'read-only disables the rating controls');
+});
+
+test('READ-ONLY: any refused save reverts to storage and never advances', () => {
+  const html = read('study/index.html');
+  const handler = html.slice(html.indexOf("$('nextBtn').addEventListener('click'"), html.indexOf('/** Re-reads the authoritative saved state'));
+  const failure = handler.slice(handler.indexOf('if (!saved.ok) {'), handler.indexOf("show('trialPanel', false);"));
+  assert.ok(failure.includes('await reloadFromStorage();'), 'memory is restored from storage');
+  assert.ok(failure.trimEnd().endsWith('return;\n      }') || /return;\s*}\s*$/.test(failure), 'and the handler returns');
+  assert.ok(!failure.includes('renderCurrent'), 'a refused answer never advances to the next composition');
+  assert.ok(!handler.includes('if (!saved.ok && storage)'), 'no failure reason may fall through to advancing');
+});
+
+test('READ-ONLY: a reload releases the lease, and a read-only tab takes over once the lease lapses', () => {
+  const html = read('study/index.html');
+  assert.ok(html.includes("window.addEventListener('pagehide', () => { if (!readOnly) store.releaseLease(); });"));
+  assert.ok(html.includes('if (store.claimLease().ok) {') && html.includes('setReadOnly(false);'));
 });

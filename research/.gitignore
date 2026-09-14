@@ -7,3 +7,10 @@ joined*.csv
 
 # Built participant bundle is a build artifact
 dist/
+
+# Private study inputs must never be committed. The legacy development key already
+# in history stays tracked (exposed, superseded, never used for participants);
+# nothing new may join it. Real corpora live outside every git work tree.
+study-private/approvals.json
+**/corpus-plan.json
+**/order-study-private/

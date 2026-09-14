@@ -170,7 +170,7 @@ test('renderer metadata is retained through serialization', () => {
 
 test('every result carries versions, effective config and approval status', () => {
   const r = score(baseFour());
-  assert.equal(r.modelVersion, 'v1-development-candidate');
+  assert.equal(r.modelVersion, 'v1-development-candidate-2'); // revision 2: see docs/SCORER-REVISIONS.md
   assert.ok(r.configVersion && r.specVersion && r.rendererVersion);
   assert.equal(r.measureKind, 'geometric-proxy');
   assert.match(r.approval.overall, /NOT APPROVED/);

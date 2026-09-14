@@ -1,9 +1,9 @@
 {
   "packageFormat": "release-package-1",
-  "packageId": "dev-pilot-5-e06f46a8bf6f1725",
-  "packageDigest": "e06f46a8bf6f172590b9b4d5bf71e33d94a0efe71ca4c05e6c9f49b16ebca8ac",
-  "label": "dev-pilot-5",
-  "builtAt": "2026-09-14T11:47:03.716Z",
+  "packageId": "dev-pilot-3-69b46adc1e925dd1",
+  "packageDigest": "69b46adc1e925dd136c80d47a0f51a9279649b692a833284e744ca744c4aad3c",
+  "label": "dev-pilot-3",
+  "builtAt": "2026-09-13T18:04:48.329Z",
   "immutable": true,
   "note": "Any change to any listed input produces a different packageDigest. Exports bind to packageDigest, not to reusable labels.",
   "releaseMode": "development",
@@ -11,7 +11,7 @@
   "returnChannel": null,
   "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED. Not a participant release. Anything recorded against this package is development-rehearsal data.",
   "identities": {
-    "modelVersion": "v1-development-candidate-2",
+    "modelVersion": "v1-development-candidate",
     "configVersion": "v1-config-draft-1",
     "specVersion": "V1-SPECIFICATION draft-2 (reconciled 2026-09-13)",
     "rendererVersion": "renderer-2",

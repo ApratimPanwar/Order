@@ -230,7 +230,20 @@
 
   buildScale($('orderScale'), (v) => { current.order = v; refreshNext(); });
   buildScale($('appealScale'), (v) => { current.appeal = v; refreshNext(); });
-  const refreshNext = () => { $('nextBtn').disabled = !(current.order && current.appeal); };
+  const refreshNext = () => { $('nextBtn').disabled = readOnly || !(current.order && current.appeal); };
+
+  /**
+   * Read-only mode disables every control that records a rating. A tab that
+   * cannot save must not accept input: an answer taken and then refused would
+   * leave the page showing progress that storage does not hold.
+   */
+  function setReadOnly(on) {
+    readOnly = on;
+    for (const b of document.querySelectorAll('#orderScale button, #appealScale button')) b.disabled = on;
+    $('comment').disabled = on;
+    $('ackBtn').disabled = on;
+    refreshNext();
+  }
 
   async function loadManifest() {
     const res = await fetch('stimuli/manifest.json', { cache: 'no-store' });
@@ -311,15 +324,33 @@
       box.append(h, b);
       return;
     }
-    box.classList.remove('warn');
+    // approved:true only ever comes from a recorded investigator approval. A
+    // development build may carry a REHEARSAL channel, and says so.
+    const approved = ch.approved === true;
+    box.classList.toggle('warn', !approved);
     const kind = document.createElement('p');
     kind.style.marginTop = '0';
-    kind.innerHTML = '<strong>Approved return channel: </strong>';
-    kind.append(document.createTextNode(String(ch.kind)));
+    const label = document.createElement('strong');
+    label.textContent = approved ? 'Approved return channel: ' : 'Rehearsal return channel (not approved for participants): ';
+    kind.append(label, document.createTextNode(String(ch.kind)));
     const how = document.createElement('p');
-    how.style.marginBottom = '0';
     how.textContent = String(ch.instructions);
     box.append(kind, how);
+    // Only an Apps Script web-app URL is ever rendered as a link.
+    if (typeof ch.url === 'string' && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(ch.url)) {
+      const p = document.createElement('p');
+      const a = document.createElement('a');
+      a.href = ch.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = approved ? 'Open the upload page' : 'Open the rehearsal upload page';
+      p.append(a);
+      box.append(p);
+    }
+    const note = document.createElement('p');
+    note.style.marginBottom = '0';
+    note.textContent = 'Only that page can confirm receipt. Until it says "Received", nothing has been received.';
+    box.append(note);
   }
 
   function finish() {
@@ -353,6 +384,10 @@
 
   $('nextBtn').addEventListener('click', async () => {
     if (submitting) return;             // async race guard (F4)
+    if (readOnly) {                     // never take an answer this tab cannot save
+      showError('This tab is read-only, so no answer can be recorded here.');
+      return;
+    }
     submitting = true;
     $('nextBtn').disabled = true;
     try {
@@ -378,21 +413,22 @@
       }
 
       const saved = await session.commitTo(store);
-      if (!saved.ok && storage) {
+      if (!saved.ok) {
+        // record() changed the in-memory session before the save was refused.
+        // Whatever the reason, the page must go back to what storage actually
+        // holds and must NOT advance past an answer that was not saved.
         if (saved.reason === 'not-active-tab') {
-          readOnly = true;
+          setReadOnly(true);
           showError('Another tab took over this task, so this answer was not saved. '
-            + 'Continue in that tab, or close it and reload here.');
-          return;
-        }
-        if (saved.reason === 'stale-session') {
+            + 'Continue in that tab, or close it; this page will become active again by itself.');
+        } else if (saved.reason === 'stale-session') {
           showError('Another tab of this task changed your progress, so this answer was not '
-            + 'saved. Reloading the newer version — please re-rate this composition here, '
-            + 'or continue in the other tab.');
-          await reloadFromStorage();
-          return;
+            + 'saved. Showing the saved version — please re-rate this composition.');
+        } else {
+          showError(`This answer was not saved (${saved.reason}). Nothing was lost from earlier answers.`);
         }
-        showError(`Progress could not be saved (${saved.reason}).`);
+        await reloadFromStorage();
+        return;
       }
       show('trialPanel', false);
       await renderCurrent();
@@ -526,12 +562,25 @@
     // rather than competing for the same record.
     const claim = store.claimLease();
     if (!claim.ok && claim.reason === 'another-tab-active') {
-      readOnly = true;
+      setReadOnly(true);
       showError('This task is already open in another tab or window. To avoid losing '
-        + 'answers, only one can be active. Close the other one and reload this page.');
-    } else {
-      setInterval(() => { if (!readOnly) store.renewLease(); }, 5000);
+        + 'answers, only one can be active. Close the other one — this page becomes '
+        + 'active by itself a few seconds later. (If you just reloaded, wait a moment.)');
     }
+    // Heartbeat while active; while read-only, take over as soon as the other
+    // holder's lease has lapsed (a closed tab, or this tab's own page before a
+    // reload that could not release it).
+    setInterval(async () => {
+      if (!readOnly) { store.renewLease(); return; }
+      if (store.claimLease().ok) {
+        setReadOnly(false);
+        showError('This page is now the active one. Your saved progress has been loaded.');
+        await reloadFromStorage();
+      }
+    }, 2000);
+    // Release the lease when this page goes away, so a reload by the same
+    // participant can continue at once instead of waiting for it to expire.
+    window.addEventListener('pagehide', () => { if (!readOnly) store.releaseLease(); });
 
     if (store.isErased()) {
       showError('This session was erased on this device. Nothing further is stored here.');

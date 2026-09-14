@@ -1,3 +1,9 @@
+> **Superseded 2026-09-14.** The in-repository Pages workflow described below has
+> been removed: deploying from `ApratimPanwar/Order` would replace the Composer
+> site. Publication now goes through `ApratimPanwar/order-study-site`, which
+> receives only the audited bundle — see `OPERATOR-GUIDE.md` and
+> `RELEASE-CHECKLIST.md`. Package identities below are historical.
+
 # GitHub Pages deployment — preparation report
 
 **Status: PREPARED, NOT DEPLOYED. NOT READY FOR PARTICIPANT COLLECTION.**

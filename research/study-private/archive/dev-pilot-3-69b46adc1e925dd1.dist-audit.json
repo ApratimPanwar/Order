@@ -1,5 +1,5 @@
 {
-  "builtAt": "2026-09-14T11:47:03.865Z",
+  "builtAt": "2026-09-13T18:04:48.481Z",
   "status": "DEVELOPMENT BUILD - not a participant release",
   "out": "dist/participant",
   "fileCount": 20,
@@ -25,17 +25,17 @@
     "stimuli/stim-ef4d96d3.json",
     "stimuli/stim-f682f0c0.json"
   ],
-  "releasePackageId": "dev-pilot-5-e06f46a8bf6f1725",
-  "releasePackageDigest": "e06f46a8bf6f172590b9b4d5bf71e33d94a0efe71ca4c05e6c9f49b16ebca8ac",
+  "releasePackageId": "dev-pilot-3-69b46adc1e925dd1",
+  "releasePackageDigest": "69b46adc1e925dd136c80d47a0f51a9279649b692a833284e744ca744c4aad3c",
   "releaseMode": "development",
   "returnChannel": null,
   "expectedDigest": null,
   "optionalAssets": [],
   "assetDigests": {
     ".nojekyll": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "index.html": "5d7df48b4aafe0ded0582ebcb45e1e62e67633af14011737d1543aa5729717d1",
+    "index.html": "3f08448d6b76095dd45f8f90341f8d633db94ccadfb94b240be9f458feae90bc",
     "persistence.js": "186cb6c5f7dc7b33e34350efdbd89b5795a4d4d8e621f1b779761ad6c882a6ce",
-    "release-package.json": "65aad4c691a46a07818f7b29faef9d957f054adb71ad3acf1d8819d4bd1ea46c",
+    "release-package.json": "be4ab290ef4c2aa72ad138f17ba4bb1defa151020450c923c4efdeb7c3675206",
     "render-layout.js": "33084ecbf058576f1ad8dc2fbadf0afa57108e730b9c92fb2f70443133ce96ac",
     "session.js": "3281c58e3cd345a0e57af9b433d565162f3c0f9ef1ced08cb055bd0f948aa61c",
     "stimuli/manifest.json": "a526115658f454215a37606cf1d2fb4b9ef31f150defddccc46a4246f8dee340",

@@ -44,8 +44,12 @@ const outPath = outIdx === -1 ? null : process.argv[outIdx + 1];
 const allowMismatch = process.argv.includes('--allow-identity-mismatch');
 
 const ROOT = join(import.meta.dirname, '..');
-const KEY = join(ROOT, 'study-private', 'stimulus-key.json');
-const PKG = join(ROOT, 'study-private', 'release-package.json');
+// --private-dir points at a corpus built OUTSIDE the repository (see
+// docs/CORPUS-SAMPLING-PLAN.md). The default is the legacy development key.
+const privIdx = process.argv.indexOf('--private-dir');
+const PRIVATE_DIR = privIdx === -1 ? join(ROOT, 'study-private') : resolve(process.argv[privIdx + 1]);
+const KEY = join(PRIVATE_DIR, 'stimulus-key.json');
+const PKG = join(PRIVATE_DIR, 'release-package.json');
 if (!existsSync(KEY)) {
   console.error(`stimulus key not found at ${KEY}. Run: node scripts/build-stimuli.mjs`);
   process.exit(2);
@@ -127,7 +131,15 @@ if (identity.problems.length && !allowMismatch) {
 }
 
 // --- 1. withdrawal ---------------------------------------------------------
-const withdrawn = rec.withdrawn === true;
+const withdrawnInFile = rec.withdrawn === true;
+// Withdrawal AFTER upload is recorded by the collector, not in the file. Pass the
+// study codes from the collector's WithdrawalRequests tab (one per line) so the
+// offline join applies them; a join run without this list says so in its output.
+const wdIdx = process.argv.indexOf('--withdrawn-codes');
+const withdrawnCodes = wdIdx === -1 ? null : new Set(readFileSync(process.argv[wdIdx + 1], 'utf8')
+  .split(/\r?\n/).map((x) => x.trim()).filter(Boolean));
+const withdrawnAfterUpload = Boolean(withdrawnCodes && withdrawnCodes.has(rec.participantId));
+const withdrawn = withdrawnInFile || withdrawnAfterUpload;
 
 const pkgStimuli = new Map((pkg.stimuli ?? []).map((s) => [s.stimulusId, s]));
 const rows = [];
@@ -170,7 +182,8 @@ for (const r of rec.responses) {
   r.scoreAvailable = scoreAvailable;
   r.analysisEligible = { modelAgreement, ratingOnly };
   r.joinStatus = isMatched ? 'matched' : 'unmatched-stimulus';
-  if (withdrawn) r.exclusionRule = 'X2-withdrawn';
+  if (withdrawnInFile) r.exclusionRule = 'X2-withdrawn';
+  else if (withdrawnAfterUpload) r.exclusionRule = 'X4-withdrawn-after-upload';
   else if (isMatched && integrityAgrees === false) r.exclusionRule = 'X1-integrity-mismatch';
   else if (!isStudyData) r.exclusionRule = 'X3-development-rehearsal';
   r.datasetPartition = datasetPartition;
@@ -197,7 +210,10 @@ for (const r of rec.responses) {
     exclusionRule: r.exclusionRule ?? '',
     invalidReason: r.invalidReason ?? '',
     // Unmatched rows carry no condition or score - empty, never 0, never guessed.
-    condition: isMatched ? k.condition : '',
+    // key-2 (legacy) records `condition`; key-3 records the pair `role`.
+    condition: isMatched ? (k.condition ?? k.role ?? '') : '',
+    pairId: isMatched ? (k.pairId ?? '') : '',
+    stratum: isMatched ? (k.stratum ?? '') : '',
     v1Total: isMatched && k.v1 ? k.v1.total : '',
     modelVersion: isMatched ? k.modelVersion : '',
     layoutIntegrity: isMatched ? k.integrity : '',
@@ -221,6 +237,12 @@ const joined = {
   },
   withdrawal: {
     withdrawn,
+    withdrawnInFile,
+    withdrawnAfterUpload,
+    postUploadWithdrawalListApplied: withdrawnCodes !== null,
+    postUploadWithdrawalNote: withdrawnCodes === null
+      ? 'NOT CHECKED: no --withdrawn-codes list was supplied, so withdrawals made after upload are not reflected here.'
+      : `checked against ${withdrawnCodes.size} withdrawn study code(s)`,
     policy: rec.withdrawalPolicy ?? null,
     effect: withdrawn
       ? 'ALL responses are ineligible for every analysis (model-agreement and rating-only).'

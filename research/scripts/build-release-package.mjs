@@ -26,7 +26,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 
 import { V1_CONFIG, effectiveConfig, MODEL_VERSION, CONFIG_VERSION, SPEC_VERSION } from '../core/scoring/v1-config.js';
 
@@ -40,9 +40,46 @@ if (MODE !== 'development' && MODE !== 'participant') {
   process.exit(2);
 }
 
+// --- where the inputs live ---------------------------------------------------
+//
+// Defaults reproduce the legacy development layout inside this repository. A
+// real corpus is built with --stimuli-root and --private-dir pointing OUTSIDE
+// any git work tree, so its scoring key and condition mapping can never be
+// committed, pushed, released or logged by a CI run.
+const flag = (name) => { const i = process.argv.indexOf(`--${name}`); return i === -1 ? null : process.argv[i + 1]; };
+const STIMULI_ROOT = flag('stimuli-root') ? resolve(flag('stimuli-root')) : join(ROOT, 'study');
+const PRIVATE_DIR = flag('private-dir') ? resolve(flag('private-dir')) : join(ROOT, 'study-private');
+const PUBLIC_PACKAGE_OUT = flag('public-package-out') ? resolve(flag('public-package-out')) : join(ROOT, 'study', 'release-package.json');
+const DEV_RETURN_CHANNEL = flag('dev-return-channel');
+
+function insideGitWorkTree(dir) {
+  let d = resolve(dir);
+  for (;;) {
+    if (existsSync(join(d, '.git'))) return d;
+    const up = dirname(d);
+    if (up === d) return null;
+    d = up;
+  }
+}
+if (flag('private-dir')) {
+  const repo = insideGitWorkTree(PRIVATE_DIR);
+  if (repo) {
+    console.error(`REFUSING: --private-dir ${PRIVATE_DIR} is inside the git work tree ${repo}.`);
+    console.error('A scoring key inside a repository can be committed and published.');
+    process.exit(2);
+  }
+}
+
+/** Maps a LOGICAL input path (as recorded in the package) to where it actually is. */
+const locate = (rel) => {
+  if (rel.startsWith('study/stimuli/')) return join(STIMULI_ROOT, rel.slice('study/'.length));
+  if (rel.startsWith('study-private/')) return join(PRIVATE_DIR, rel.slice('study-private/'.length));
+  return join(ROOT, rel);
+};
+
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex');
 const fileDigest = (rel) => {
-  const p = join(ROOT, rel);
+  const p = locate(rel);
   if (!existsSync(p)) throw new Error(`release input missing: ${rel}`);
   return { path: rel, sha256: sha256(readFileSync(p)), bytes: readFileSync(p).length };
 };
@@ -72,7 +109,7 @@ const OPTIONAL_PARTICIPANT_ASSETS = [
   'study/protocol.json',
   'study/debrief.html',
 ];
-const presentOptional = OPTIONAL_PARTICIPANT_ASSETS.filter((rel) => existsSync(join(ROOT, rel)));
+const presentOptional = OPTIONAL_PARTICIPANT_ASSETS.filter((rel) => existsSync(locate(rel)));
 const sources = [...SOURCE_FILES, ...presentOptional].sort().map(fileDigest);
 
 // --- 2. the effective configuration, canonically serialised -----------------
@@ -81,9 +118,9 @@ const effectiveCanonical = JSON.stringify(effective, Object.keys(effective).sort
 const configDigest = sha256(effectiveCanonical);
 
 // --- 3. every stimulus layout ----------------------------------------------
-const manifest = JSON.parse(readFileSync(join(ROOT, 'study/stimuli/manifest.json'), 'utf8'));
+const manifest = JSON.parse(readFileSync(locate('study/stimuli/manifest.json'), 'utf8'));
 const stimuli = manifest.items.map((item) => {
-  const bytes = readFileSync(join(ROOT, 'study', item.file));
+  const bytes = readFileSync(join(STIMULI_ROOT, item.file));
   return {
     stimulusId: item.stimulusId,
     sha256: sha256(bytes),
@@ -94,7 +131,7 @@ const stimuli = manifest.items.map((item) => {
 
 // --- 4. the scoring key (private side only) ---------------------------------
 const keyPath = 'study-private/stimulus-key.json';
-const keyDigest = existsSync(join(ROOT, keyPath)) ? fileDigest(keyPath) : null;
+const keyDigest = existsSync(locate(keyPath)) ? fileDigest(keyPath) : null;
 if (!keyDigest) {
   console.error(`scoring key missing at ${keyPath}. Run: node scripts/build-stimuli.mjs`);
   process.exit(2);
@@ -113,7 +150,7 @@ const REQUIRED_SIGNOFFS = [
 const S_ITEMS = Array.from({ length: 21 }, (_, i) => `S${i + 1}`);
 
 function loadApprovals() {
-  const abs = join(ROOT, APPROVAL_PATH);
+  const abs = locate(APPROVAL_PATH);
   if (!existsSync(abs)) return { ok: false, problems: [`${APPROVAL_PATH} does not exist`] };
   let rec;
   try { rec = JSON.parse(readFileSync(abs, 'utf8')); }
@@ -126,6 +163,10 @@ function loadApprovals() {
   const decisions = rec.s1_s21 ?? {};
   const unresolved = S_ITEMS.filter((k) => !decisions[k] || decisions[k] === 'pending');
   if (unresolved.length) problems.push(`unresolved decisions: ${unresolved.join(', ')}`);
+  // Scorer revision 2 introduced rules after the S1-S21 sheet; they need their own sign-off.
+  const r2 = rec.scorerRevision2 ?? {};
+  const unresolvedR2 = ['R2-1', 'R2-2', 'R2-3'].filter((k) => !r2[k] || r2[k] === 'pending');
+  if (unresolvedR2.length) problems.push(`unresolved scorer revision decisions: ${unresolvedR2.join(', ')}`);
   for (const k of REQUIRED_SIGNOFFS) if (rec[k] !== true) problems.push(`${k} is not true`);
   const ch = rec.returnChannel;
   if (!ch || !ch.kind || !ch.instructions) {
@@ -150,7 +191,25 @@ if (MODE === 'participant') {
 
 const releaseMode = MODE;
 const dataClass = MODE === 'participant' ? 'study-data' : 'development-rehearsal';
-const returnChannel = approvals ? approvals.returnChannel : null;
+// A development build may carry a REHEARSAL return channel so the collection
+// pipeline can be exercised end to end. It is stamped approved:false and the
+// interface says so. A participant build takes its channel only from the
+// recorded approval.
+let devChannel = null;
+if (DEV_RETURN_CHANNEL) {
+  if (MODE !== 'development') {
+    console.error('--dev-return-channel is only allowed for a development build.');
+    process.exit(2);
+  }
+  const ch = JSON.parse(readFileSync(resolve(DEV_RETURN_CHANNEL), 'utf8'));
+  if (!ch.kind || !ch.instructions) { console.error('dev return channel needs kind and instructions'); process.exit(2); }
+  if (ch.url !== undefined && ch.url !== null && !/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(ch.url)) {
+    console.error(`dev return channel url must be an Apps Script web-app /exec URL (got ${ch.url})`);
+    process.exit(2);
+  }
+  devChannel = { kind: ch.kind, instructions: ch.instructions, url: ch.url ?? null, approved: false };
+}
+const returnChannel = approvals ? { ...approvals.returnChannel, approved: true } : devChannel;
 
 // --- 5. the package digest --------------------------------------------------
 const components = [
@@ -191,13 +250,13 @@ const common = {
 };
 
 // Participant-facing: identity only. No scores, no key digest, no conditions.
-writeFileSync(join(ROOT, 'study', 'release-package.json'), JSON.stringify({
+writeFileSync(PUBLIC_PACKAGE_OUT, JSON.stringify({
   ...common,
   stimuli: stimuli.map((s) => ({ stimulusId: s.stimulusId, sha256: s.sha256, fnv: s.fnv })),
 }, null, 2));
 
 // Researcher-facing: the full record.
-writeFileSync(join(ROOT, 'study-private', 'release-package.json'), JSON.stringify({
+writeFileSync(join(PRIVATE_DIR, 'release-package.json'), JSON.stringify({
   ...common,
   sources,
   effectiveConfig: effective,
@@ -213,8 +272,8 @@ console.log(`  stimuli       : ${stimuli.length}`);
 console.log(`  config digest : ${configDigest.slice(0, 16)}...`);
 console.log(`  key digest    : ${keyDigest.sha256.slice(0, 16)}...`);
 console.log('\n  participant side : study/release-package.json  (identity only)');
-console.log('  researcher side  : study-private/release-package.json');
-const pub = readFileSync(join(ROOT, 'study', 'release-package.json'), 'utf8');
+console.log(`  researcher side  : ${join(PRIVATE_DIR, 'release-package.json')}`);
+const pub = readFileSync(PUBLIC_PACKAGE_OUT, 'utf8');
 console.log('\n  participant-side leak check:');
 for (const t of ['condition', 'scoringKey', 'v1Total', 'strict-grid', 'radial']) {
   console.log(`    contains "${t}": ${pub.includes(t)}`);

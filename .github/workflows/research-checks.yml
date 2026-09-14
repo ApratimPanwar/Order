@@ -1,0 +1,30 @@
+# Runs the research test suite and the specification verifier.
+#
+# This repository does NOT publish to GitHub Pages. Its Pages site is the Order
+# Composer and must stay untouched; the study is published from the separate
+# ApratimPanwar/order-study-site repository, which receives only the audited
+# participant bundle (see research/scripts/export-study-site.mjs). Keeping the
+# deployment out of this repository means no run here can replace the Composer.
+
+name: Research checks
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: research
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.15.0'
+      - run: npm test
+      - run: node scripts/verify-specification.mjs
+      - run: node scripts/build-participant-dist.mjs

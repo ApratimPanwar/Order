@@ -1,0 +1,95 @@
+{
+  "generatedAt": "2026-09-14T11:28:13.188Z",
+  "provenance": {
+    "scorer": "v1-development-candidate-2",
+    "configVersion": "v1-config-draft-1",
+    "specVersion": "V1-SPECIFICATION draft-2 (reconciled 2026-09-13)",
+    "preset": "strict-grid",
+    "presetImplementationVersion": "preset-impl-1",
+    "baselineVersion": "baseline-2",
+    "generatorVersion": "generate-1",
+    "rng": "mulberry32/rng-1",
+    "seeds": [
+      1,
+      2000
+    ],
+    "twinSeedPattern": "baseline-<seed>",
+    "approval": "DEVELOPMENT CANDIDATE - none of S1-S21 approved"
+  },
+  "definitions": {
+    "eligible": "both members scorable under the study scorer",
+    "unsupported": "at least one member not scorable",
+    "win": "eligible and source total > twin total",
+    "tie": "eligible and source total === twin total (exact)",
+    "reversal": "eligible and source total < twin total",
+    "denominator": "proportions are over eligible pairs"
+  },
+  "counts": {
+    "pairs": 2000,
+    "eligible": 1998,
+    "unsupported": 2,
+    "unsupportedBreakdown": {
+      "sourceOnly": 0,
+      "twinOnly": 0,
+      "both": 2,
+      "gateReasonOccurrences": {
+        "below-min-elements": 4
+      }
+    },
+    "wins": 1976,
+    "ties": 0,
+    "reversals": 22,
+    "closeWithinHalfPoint": 28
+  },
+  "proportionsOfEligible": {
+    "win": 0.988988988988989,
+    "winWilson95": [
+      0.983383993872994,
+      0.9927172809757756
+    ],
+    "tie": 0,
+    "reversal": 0.011011011011011011,
+    "reversalWilson95": [
+      0.00728271902422448,
+      0.016616006127006047
+    ]
+  },
+  "deltaDistribution": {
+    "mean": 4.819801658409536,
+    "min": -2.3858109595460633,
+    "p05": 1.40451986747523,
+    "p25": 3.3268143158530705,
+    "p50": 4.699186926674891,
+    "p75": 6.252374564084484,
+    "p95": 8.594977649155268,
+    "max": 17.198006820186066
+  },
+  "meanDimensionDelta": {
+    "allEligible": {
+      "hierarchy": 0.038341620196106554,
+      "grouping": 0.11684144815660365,
+      "structure": 1.7094066114360524,
+      "flow": 0.17345868831061959,
+      "spatial": 0.8838870401073614,
+      "variety": -0.005643792664402773
+    },
+    "reversalsOnly": {
+      "hierarchy": -0.13731701837851554,
+      "grouping": -0.049805688007054455,
+      "structure": 1.433437431868575,
+      "flow": -1.3910808203653322,
+      "spatial": -0.5132270761880681,
+      "variety": -0.00008993396447982087
+    }
+  },
+  "revision1Diagnostic": {
+    "note": "Revision 1 is the archived, superseded scorer. Reported only to size the effect of the element-order defect on THIS comparison. It is not a result of the study scorer.",
+    "pairsScorableBothWaysUnderR1": 1998,
+    "outcomeSignChangedByReversingElementArrays": 2,
+    "outcomeSignDiffersFromRevision2": 2
+  },
+  "archivedFigureNotReused": {
+    "archived": "1,860 / 2,000 (93%) wins under v0-as-shipped, results/baseline-matched.csv",
+    "status": "different scorer; not reused, restated or compared as the same measurement"
+  }
+}

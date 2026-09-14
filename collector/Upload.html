@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root { --fg:#1f2937; --muted:#6b7280; --line:#d1d5db; --accent:#1d4ed8; --warn:#b45309; --ok:#166534; --bad:#991b1b; }
+  * { box-sizing: border-box; }
+  body { font: 15px/1.55 system-ui, -apple-system, Segoe UI, sans-serif; color: var(--fg); margin: 0; padding: 24px; max-width: 720px; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  h2 { font-size: 15px; margin: 22px 0 6px; }
+  .panel { border:1px solid var(--line); border-radius:8px; padding:16px; margin:14px 0; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .code { font-family: ui-monospace, Consolas, monospace; background:#f3f4f6; border:1px solid var(--line); border-radius:4px; padding:1px 6px; }
+  button { font: inherit; padding:8px 16px; border:1px solid var(--line); border-radius:6px; background:#fff; cursor:pointer; }
+  button.primary { background: var(--accent); color:#fff; border-color: var(--accent); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  input[type=text] { font: inherit; padding:7px 9px; border:1px solid var(--line); border-radius:6px; width: 260px; }
+  .result { border-radius:6px; padding:10px 12px; margin-top:12px; font-size:14px; }
+  .result.ok { background:#f0fdf4; border:1px solid #86efac; color:var(--ok); }
+  .result.hold { background:#fffbeb; border:1px solid #fcd34d; color:var(--warn); }
+  .result.bad { background:#fef2f2; border:1px solid #fca5a5; color:var(--bad); }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+  ul { padding-left: 20px; }
+</style>
+</head>
+<body>
+<h1>Return your responses</h1>
+<p>At the end of the rating task you downloaded a file named
+   <span class="code">order-rating-p-….json</span>. Select it here to send it to the
+   research team. <strong>Until this page confirms receipt, nothing has been received.</strong></p>
+
+<div class="panel" id="closedNotice" hidden>
+  <strong>Uploads are not currently open.</strong> Nothing you select here will be sent.
+</div>
+
+<div class="panel">
+  <h2 style="margin-top:0">1. Choose the file</h2>
+  <input type="file" id="file" accept=".json,application/json">
+  <div id="summary" class="muted" style="margin-top:8px"></div>
+  <div class="row">
+    <button class="primary" id="send" disabled>Send this file</button>
+  </div>
+  <div id="result"></div>
+</div>
+
+<h2>What is sent, and what is not</h2>
+<ul>
+  <li>Only the file you choose: your ratings, notes, timings and the random study
+      code inside it. This page does not ask for your name or email address, and
+      you do not need to sign in.</li>
+  <li>This page is run by Google Apps Script. Like any web service, Google
+      ordinarily records technical information about each request, such as an IP
+      address. The research team does not receive those logs, and this page cannot
+      turn them off, so <strong>we cannot promise that sending the file is
+      anonymous</strong> — only that nothing identifying is requested or stored with
+      your responses.</li>
+  <li>The file is kept in a private Google Drive folder, and your responses are
+      copied into a private spreadsheet. Neither is shared publicly, and this page
+      cannot display them to anyone.</li>
+</ul>
+
+<div class="panel">
+  <h2 style="margin-top:0">Withdrawing responses you have already sent</h2>
+  <p>Erasing the task in your browser removes your answers <strong>from that browser
+     only</strong>. It does not remove a file you have already sent. To withdraw a file
+     you have sent, enter the study code shown on your final screen (it is also in the
+     file name and inside the file).</p>
+  <div class="row">
+    <input type="text" id="code" placeholder="p-0123456789abcdef" autocomplete="off" spellcheck="false">
+    <button id="withdraw">Request withdrawal</button>
+  </div>
+  <div id="withdrawResult"></div>
+  <p class="muted" id="withdrawPolicy"></p>
+  <p class="muted" id="contact"></p>
+</div>
+
+<p class="muted" id="version"></p>
+
+<script>
+  var $ = function (id) { return document.getElementById(id); };
+  var selected = null;   // { text, sha, record }
+
+  function show(el, cls, lines) {
+    el.textContent = '';
+    var box = document.createElement('div');
+    box.className = 'result ' + cls;
+    lines.forEach(function (line, i) {
+      var p = document.createElement('div');
+      if (i === 0) { var s = document.createElement('strong'); s.textContent = line; p.appendChild(s); }
+      else p.textContent = line;
+      box.appendChild(p);
+    });
+    el.appendChild(box);
+  }
+
+  function hex(buf) {
+    return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+
+  google.script.run.withSuccessHandler(function (cfg) {
+    $('version').textContent = 'Collector ' + cfg.collectorVersion;
+    $('closedNotice').hidden = cfg.accepting;
+    $('withdrawPolicy').textContent = cfg.withdrawalPolicy === 'delete'
+      ? 'When a request is processed, the file and the rows copied from it are deleted.'
+      : 'When a request is processed, your responses are marked as withdrawn and excluded from all analysis.';
+    $('contact').textContent = cfg.contactText
+      ? cfg.contactText
+      : 'No contact route has been configured for this collector yet.';
+  }).getPageConfig();
+
+  $('file').addEventListener('change', function () {
+    selected = null; $('send').disabled = true; $('result').textContent = ''; $('summary').textContent = '';
+    var f = this.files && this.files[0];
+    if (!f) return;
+    if (f.size > 1000000) { show($('result'), 'bad', ['This file is too large to be a response file.', 'Nothing was sent.']); return; }
+    var reader = new FileReader();
+    reader.onload = function () {
+      var text = String(reader.result);
+      var rec = null;
+      try { rec = JSON.parse(text); } catch (e) { rec = null; }
+      crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (d) {
+        selected = { text: text, sha: hex(d), record: rec };
+        if (!rec || rec.exportFormat !== 'rating-export-1') {
+          $('summary').textContent = 'This does not look like a rating response file. You can still send it; it will be checked.';
+        } else {
+          var n = Array.isArray(rec.responses) ? rec.responses.length : 0;
+          $('summary').textContent = 'Study code ' + rec.participantId + ' · ' + n + ' response(s)'
+            + (rec.withdrawn ? ' · withdrawn' : '')
+            + (rec.dataClass === 'development-rehearsal' ? ' · REHEARSAL DATA (not part of the study)' : '');
+        }
+        $('send').disabled = false;
+      });
+    };
+    reader.onerror = function () { show($('result'), 'bad', ['The file could not be read.', 'Nothing was sent.']); };
+    reader.readAsText(f, 'UTF-8');
+  });
+
+  function send(attempt) {
+    if (!selected) return;
+    $('send').disabled = true;
+    show($('result'), 'hold', ['Sending…', 'Do not close this page until it confirms receipt.']);
+    google.script.run
+      .withSuccessHandler(function (r) { handle(r, attempt); })
+      .withFailureHandler(function () { handle({ status: 'not-received', retryable: true, reason: 'network' }, attempt); })
+      .submitExport(selected.text, selected.sha);
+  }
+
+  function handle(r, attempt) {
+    var el = $('result');
+    // "Received" is shown ONLY for a server receipt whose file hash matches the
+    // file this page read. Anything else is reported as not received.
+    if (r.status === 'received' && r.uploadSha256 === selected.sha) {
+      show(el, 'ok', [
+        'Received.',
+        'Upload reference: ' + r.uploadId,
+        'Received at ' + r.serverReceivedAt + ' · ' + r.responseCount + ' response(s) stored'
+          + (r.duplicate ? ' (this file had already been received; nothing was stored twice)' : ''),
+        r.dataClass === 'development-rehearsal' ? 'This was rehearsal data and is kept out of the study dataset.' : '',
+      ].filter(Boolean));
+      return;
+    }
+    if (r.status === 'held-for-review' && r.uploadSha256 === selected.sha) {
+      show(el, 'hold', ['Stored, but not added to the responses.',
+        'A different file with this study code was received earlier. This file has been kept privately for the researcher to review; it did not replace anything.',
+        'Upload reference: ' + r.uploadId]);
+      return;
+    }
+    if (r.status === 'withdrawn') { show(el, 'hold', ['Not stored.', r.message]); return; }
+    if (r.status === 'rejected') {
+      show(el, 'bad', ['Not received: this file did not pass the checks.', 'Nothing was stored.', 'Reasons: ' + (r.errors || []).slice(0, 8).join(', ')]);
+      $('send').disabled = false;
+      return;
+    }
+    if (r.status === 'closed') { show(el, 'bad', ['Not received.', 'Uploads are not currently open.']); return; }
+    if (r.retryable && attempt < 3) {
+      var wait = 1500 * Math.pow(2, attempt);
+      show(el, 'hold', ['Not received yet — retrying in ' + Math.round(wait / 1000) + ' s.', 'Keep this page open.']);
+      setTimeout(function () { send(attempt + 1); }, wait);
+      return;
+    }
+    show(el, 'bad', ['Not received.', 'Please try again. Sending the same file again is safe: it cannot be stored twice.']);
+    $('send').disabled = false;
+  }
+
+  $('send').addEventListener('click', function () { send(0); });
+
+  $('withdraw').addEventListener('click', function () {
+    var code = $('code').value.trim();
+    if (!/^p-[0-9a-f]{16}$/.test(code)) { show($('withdrawResult'), 'bad', ['That is not a valid study code.', 'It looks like p- followed by 16 characters 0-9 and a-f.']); return; }
+    $('withdraw').disabled = true;
+    google.script.run
+      .withSuccessHandler(function (r) {
+        $('withdraw').disabled = false;
+        if (r.status === 'withdrawal-recorded') {
+          show($('withdrawResult'), 'ok', ['Withdrawal request recorded.',
+            'Request reference: ' + r.requestId + (r.duplicate ? ' (already recorded earlier)' : ''),
+            'This records your request; it is carried out by the researcher. It applies to any file sent with this code, including one sent later.']);
+        } else {
+          show($('withdrawResult'), 'bad', ['Not recorded.', 'Please try again.']);
+        }
+      })
+      .withFailureHandler(function () { $('withdraw').disabled = false; show($('withdrawResult'), 'bad', ['Not recorded.', 'Please try again.']); })
+      .requestWithdrawal(code);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-09-14T12:14:47.238Z",
+  "design": {
+    "seeds": [
+      1,
+      300
+    ],
+    "variants": [
+      "as-generated",
+      "shape-grouping",
+      "size-uniformity",
+      "strict-grid",
+      "visual-hierarchy",
+      "rhythmic-spacing",
+      "proximity-clustering",
+      "visual-balance",
+      "rotation-alignment",
+      "average-face-direction",
+      "bilateral-symmetry",
+      "color-harmony",
+      "radial-distribution"
+    ],
+    "permutationsPerLayout": "reversed array + 5 seeded shuffles",
+    "affectedDefinition": "any submetric changes by more than 1e-9 under any permutation"
+  },
+  "revision1": {
+    "scorer": "v1-development-candidate (archived)",
+    "layouts": 3879,
+    "permutedScorings": 23274,
+    "affectedLayouts": 1101,
+    "bitwiseDifferences": 16469,
+    "differencesOver1e9": 4860,
+    "maxAbsTotalDelta": 5.191384092934996,
+    "affectedSubmetrics": {
+      "m_f,1": 1007,
+      "m_f,2": 4805,
+      "m_f,3": 1428
+    }
+  },
+  "revision2": {
+    "scorer": "v1-development-candidate-2 (study scorer)",
+    "layouts": 3879,
+    "permutedScorings": 23274,
+    "affectedLayouts": 0,
+    "bitwiseDifferences": 0,
+    "differencesOver1e9": 0,
+    "maxAbsTotalDelta": 0,
+    "affectedSubmetrics": {}
+  }
+}

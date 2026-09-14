@@ -27,7 +27,13 @@ import {
   equivalentDiameter, scoringCentroid, rotationPeriod, circularConsistency,
   polygonArea, clipToRect,
 } from '../geometry.js';
-import { V1_CONFIG, effectiveConfig, approvalRecord, MODEL_VERSION, CONFIG_VERSION, SPEC_VERSION } from './v1-config.js';
+import { V1_CONFIG, effectiveConfig, approvalRecord, CONFIG_VERSION, SPEC_VERSION } from './v1-config.js';
+
+// ARCHIVED REVISION 1 - byte-for-byte the scorer at commit 9b8f43f except for
+// this header and the version label below. Kept ONLY to reproduce records made
+// under revision 1 and to demonstrate the two defects it contains (element-order
+// dependence in flow; Kendall tau-b joint ties). Never use it for new scoring.
+const MODEL_VERSION = 'v1-development-candidate';
 
 const SUPPORTED_TYPES = new Set(['circle', 'square', 'rectangle', 'triangle']);
 
@@ -62,85 +68,24 @@ function normalisedEntropy(counts) {
   return clip01(h / Math.log(k));
 }
 
-/**
- * Kendall tau-b, tie-corrected. (§2.3)
- *
- *   tau_b = (n_c - n_d) / sqrt((n_0 - n_1) * (n_0 - n_2))
- *
- * n_0 = n(n-1)/2, n_1 = pairs tied in `a`, n_2 = pairs tied in `b`. A pair tied
- * in BOTH sequences counts in n_1 AND n_2, so it leaves both factors. The
- * previous implementation added jointly tied pairs back into each factor
- * (`c + d + ta` with `ta` including joint ties), which under-estimated
- * agreement whenever a joint tie existed: [1,1,2] vs itself returned 0.667,
- * not 1. Returns 0 when either sequence is constant (tau_b undefined).
- */
+/** Kendall tau-b, tie-corrected. (§2.3) */
 export function kendallTauB(a, b) {
   const n = a.length;
-  if (n < 2 || b.length !== n) return 0;
-  let c = 0; let d = 0; let tiedA = 0; let tiedB = 0;
+  if (n < 2) return 0;
+  let c = 0; let d = 0; let ta = 0; let tb = 0;
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const da = Math.sign(a[i] - a[j]);
       const db = Math.sign(b[i] - b[j]);
-      if (da === 0) tiedA++;
-      if (db === 0) tiedB++;
-      if (da !== 0 && db !== 0) {
-        if (da === db) c++; else d++;
-      }
+      if (da === 0 && db === 0) { ta++; tb++; }
+      else if (da === 0) ta++;
+      else if (db === 0) tb++;
+      else if (da === db) c++;
+      else d++;
     }
   }
-  const n0 = (n * (n - 1)) / 2;
-  const denom = Math.sqrt((n0 - tiedA) * (n0 - tiedB));
+  const denom = Math.sqrt((c + d + ta) * (c + d + tb));
   return denom === 0 ? 0 : (c - d) / denom;
-}
-
-/**
- * CANONICAL ELEMENT ORDER (§2.4)
- *
- * The position of an element in `layout.elements` carries no visual meaning, so
- * it must not influence a score. Several flow computations select among exact
- * or tolerance-level ties — equal prominence when choosing path starts, equal
- * cost when choosing the next path element, equal reading position within a
- * row band — and a stable sort resolves those ties by array position. Measured
- * before this rule: 1,093 of 3,879 scorable layouts changed flow submetrics
- * under a pure permutation of the element array, by up to 5.19 total points.
- *
- * RULE. Before any quantity is computed, visible elements are placed in
- * ascending lexicographic order of
- *
- *   (y, x, type, size, size2, rotation, red, green, blue, filled)
- *
- * using the element's own attributes (`size2` defaults to `size`; colour is
- * compared as parsed sRGB, so notation does not matter). Every later iteration,
- * summation and tie-break follows this order, so ties are resolved top-to-bottom,
- * then left-to-right, then by shape attributes — never by array position.
- *
- * Two elements that compare equal on every key are identical in every input
- * the scorer reads, so their relative order cannot change any result. The
- * element `id`, `index` and `order` fields are deliberately NOT keys.
- */
-export const CANONICAL_ORDER_KEYS = Object.freeze(
-  ['y', 'x', 'type', 'size', 'size2', 'rotation', 'red', 'green', 'blue', 'filled'],
-);
-
-export function canonicalElementOrder(elements) {
-  const keyed = elements.map((e) => {
-    const rgb = parseColor(e.color).rgb ?? { r: -1, g: -1, b: -1 };
-    return {
-      e,
-      k: [e.y, e.x, String(e.type), e.size, e.size2 ?? e.size, e.rotation, rgb.r, rgb.g, rgb.b, e.filled ? 1 : 0],
-    };
-  });
-  keyed.sort((A, B) => {
-    for (let i = 0; i < A.k.length; i++) {
-      const a = A.k[i]; const b = B.k[i];
-      if (a === b) continue;
-      if (typeof a === 'string') return a < b ? -1 : 1;
-      return a - b;
-    }
-    return 0;
-  });
-  return keyed.map((x) => x.e);
 }
 
 // ---------------------------------------------------------------------------
@@ -327,8 +272,7 @@ export function score(layout, config = V1_CONFIG) {
     };
   }
 
-  // Canonical order FIRST: nothing below may depend on array position (§2.4).
-  const visible = canonicalElementOrder(layout.elements.filter((e) => e.visible));
+  const visible = layout.elements.filter((e) => e.visible);
   const n = visible.length;
 
   // -- per-element derived quantities ---------------------------------------

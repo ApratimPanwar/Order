@@ -1,9 +1,9 @@
 {
   "packageFormat": "release-package-1",
-  "packageId": "dev-pilot-5-e06f46a8bf6f1725",
-  "packageDigest": "e06f46a8bf6f172590b9b4d5bf71e33d94a0efe71ca4c05e6c9f49b16ebca8ac",
-  "label": "dev-pilot-5",
-  "builtAt": "2026-09-14T11:47:03.716Z",
+  "packageId": "dev-pilot-3-69b46adc1e925dd1",
+  "packageDigest": "69b46adc1e925dd136c80d47a0f51a9279649b692a833284e744ca744c4aad3c",
+  "label": "dev-pilot-3",
+  "builtAt": "2026-09-13T18:04:48.329Z",
   "immutable": true,
   "note": "Any change to any listed input produces a different packageDigest. Exports bind to packageDigest, not to reusable labels.",
   "releaseMode": "development",
@@ -11,7 +11,7 @@
   "returnChannel": null,
   "approval": "DEVELOPMENT CANDIDATE - NOT APPROVED. Not a participant release. Anything recorded against this package is development-rehearsal data.",
   "identities": {
-    "modelVersion": "v1-development-candidate-2",
+    "modelVersion": "v1-development-candidate",
     "configVersion": "v1-config-draft-1",
     "specVersion": "V1-SPECIFICATION draft-2 (reconciled 2026-09-13)",
     "rendererVersion": "renderer-2",
@@ -31,13 +31,13 @@
     },
     {
       "path": "core/scoring/v1-config.js",
-      "sha256": "e2e0ffe0ee592865bc9e0fca92bc04eef3a01a9cee60de8d683de4c233c2c77e",
-      "bytes": 6747
+      "sha256": "b7f22b39612ab2af7576e3114da66c8db1fbc8894ddc019a2d546d897fc56333",
+      "bytes": 6332
     },
     {
       "path": "core/scoring/v1.js",
-      "sha256": "5688a9d49fae1511c6d9eb5ac52807b851c70211eacdceb5af98e85a8f196c9a",
-      "bytes": 26819
+      "sha256": "6d862a97f3ee0b6c18cbbdc9da652008c073ed7e994bd8590645da4a75fde0ec",
+      "bytes": 24107
     },
     {
       "path": "docs/decisions/V1-SPECIFICATION.md",
@@ -46,8 +46,8 @@
     },
     {
       "path": "study/index.html",
-      "sha256": "5d7df48b4aafe0ded0582ebcb45e1e62e67633af14011737d1543aa5729717d1",
-      "bytes": 29600
+      "sha256": "3f08448d6b76095dd45f8f90341f8d633db94ccadfb94b240be9f458feae90bc",
+      "bytes": 26949
     },
     {
       "path": "study/persistence.js",
@@ -239,8 +239,8 @@
   "components": [
     "core/color.js:9c2322887aba7331e4b6830d4a75bd2462c3d08dafe9a9248b82fc551c4bb657",
     "core/geometry.js:b9588186b7cfd1bc309336ac79855a1fe66f4674357a400a1e66290a961b98c7",
-    "core/scoring/v1-config.js:e2e0ffe0ee592865bc9e0fca92bc04eef3a01a9cee60de8d683de4c233c2c77e",
-    "core/scoring/v1.js:5688a9d49fae1511c6d9eb5ac52807b851c70211eacdceb5af98e85a8f196c9a",
+    "core/scoring/v1-config.js:b7f22b39612ab2af7576e3114da66c8db1fbc8894ddc019a2d546d897fc56333",
+    "core/scoring/v1.js:6d862a97f3ee0b6c18cbbdc9da652008c073ed7e994bd8590645da4a75fde0ec",
     "docs/decisions/V1-SPECIFICATION.md:b9e0f72c681331b7dc96cd3c663e81b25d1462515628b12b99ccec5d63b5efd1",
     "effective-config:51eaa586fc82e358f22efcadb20f3be5032ed68b17864c63151c9c11f99179d1",
     "release-mode:development",
@@ -259,7 +259,7 @@
     "stim-eb51b057:a66e6ee37cfb146394a9ac81064760435643f16ce6ec92404d66d2eda4ca8a91",
     "stim-ef4d96d3:9621c7adf13df31cd44d65dbc94638e87b7cedfdffbad015d163bd3ae1013476",
     "stim-f682f0c0:b02ffe66cde2136f4ecd7c06b7164586068af379e4e82df993f9988e4d18886a",
-    "study/index.html:5d7df48b4aafe0ded0582ebcb45e1e62e67633af14011737d1543aa5729717d1",
+    "study/index.html:3f08448d6b76095dd45f8f90341f8d633db94ccadfb94b240be9f458feae90bc",
     "study/persistence.js:186cb6c5f7dc7b33e34350efdbd89b5795a4d4d8e621f1b779761ad6c882a6ce",
     "study/render-layout.js:33084ecbf058576f1ad8dc2fbadf0afa57108e730b9c92fb2f70443133ce96ac",
     "study/session.js:3281c58e3cd345a0e57af9b433d565162f3c0f9ef1ced08cb055bd0f948aa61c",
