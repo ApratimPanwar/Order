@@ -310,6 +310,11 @@ function fakeGoogle() {
     getType() { return this.type; }
     getTitle() { return this.title; }
     setTitle(t) { this.title = t; return this; }
+    asMultipleChoiceItem() { return this; }
+    asTextItem() { return this; }
+    asImageItem() { return this; }
+    getChoices() { return this.choices.map((c) => ({ getValue: () => c.value, getPageNavigationType: () => c.nav })); }
+    getImage() { const data = this.image.data; return { getBytes: () => data }; }
     setHelpText(t) { this.help = t; return this; }
     setRequired(b) { this.required = b; return this; }
     isRequired() { return this.required; }
@@ -335,6 +340,9 @@ function fakeGoogle() {
     getId() { return this.id; }
     setDescription(d) { this.description = d; return this; }
     setConfirmationMessage(m) { this.confirmation = m; return this; }
+    getTitle() { return this.title; }
+    getDescription() { return this.description; }
+    getConfirmationMessage() { return this.confirmation; }
     setIsQuiz(b) { this.s.isQuiz = b; return this; } isQuiz() { return this.s.isQuiz; }
     setCollectEmail(b) { this.s.collectEmail = b; return this; } collectsEmail() { return this.s.collectEmail; }
     setRequireLogin() { throw new Error('Only available for Google Workspace users'); } requiresLogin() { throw new Error('Only available for Google Workspace users'); }
@@ -365,7 +373,7 @@ function fakeGoogle() {
       PageNavigationType: { CONTINUE: 'CONTINUE', SUBMIT: 'SUBMIT' },
       DestinationType: { SPREADSHEET: 'SPREADSHEET' },
       Alignment: { CENTER: 'CENTER' },
-      ItemType: { SCALE: 'SCALE', IMAGE: 'IMAGE', PAGE_BREAK: 'PAGE_BREAK' },
+      ItemType: { SCALE: 'SCALE', IMAGE: 'IMAGE', PAGE_BREAK: 'PAGE_BREAK', MULTIPLE_CHOICE: 'MULTIPLE_CHOICE', TEXT: 'TEXT' },
       createTextValidation: () => { const v = {}; const bld = { setHelpText: (h) => { v.help = h; return bld; }, requireTextMatchesPattern: (p) => { v.pattern = p; return bld; }, build: () => v }; return bld; },
     },
     Utilities: {
@@ -588,4 +596,131 @@ test('EXPORT: refuses altered plans, substituted keys, unmatched headers, and ou
   assert.equal(r.code, 2);
   assert.match(r.err, /inside the git work tree/);
   assert.ok(!existsSync(join(ROOT, 'results', 'should-not-exist')));
+});
+
+/* ---------------------------------------------------------------------------
+ * single fixed-order form with participant-chosen codes (study configuration)
+ * ------------------------------------------------------------------------ */
+
+function singleFormStudy(label, formsApproval = {}) {
+  const studyC = join(work, `${label}-corpus`);
+  cpSync(corpus, studyC, { recursive: true });
+  const k = readJson(join(studyC, 'stimulus-key.json'));
+  k.purpose = 'study'; k.planStatus = 'approved';
+  writeFileSync(join(studyC, 'stimulus-key.json'), JSON.stringify(k));
+  writeFileSync(join(studyC, 'approvals.json'), JSON.stringify({
+    approvalFormat: 'investigator-approval-2', approvedBy: 'fixture', specFreezeId: 'f', ethicsReviewStatus: 'fixture',
+    s1_s21: Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`S${i + 1}`, 'accept'])),
+    scorerRevision2: { 'R2-1': 'accept', 'R2-2': 'accept', 'R2-3': 'accept' },
+    protocolApproved: true, participantWordingApproved: true, collectionProcedureApproved: true, corpusApproved: true,
+    formsApproval: {
+      formTitle: 'Visual Composition Rating Study', participantInformation: 'info', consentQuestion: 'I confirm and agree.',
+      agreeChoice: 'I agree and wish to continue.', declineChoice: 'I do not agree.', codeQuestion: 'Your study code',
+      codeHelp: 'Make up a code.', codeValidationHelp: 'Use 6-12 letters or digits.', confirmationMessage: 'Thank you.',
+      codeMode: 'participant-chosen', variants: 1,
+      orderQuestion: 'How ordered does this composition appear?', appealQuestion: 'How visually appealing do you find this composition?',
+      ...formsApproval,
+    },
+  }));
+  const out = join(work, `${label}-build`);
+  return { studyC, out, r: run('scripts/forms/prepare-forms-build.mjs', ['--private-dir', studyC, '--out', out, '--mode', 'study', '--variants', '1', '--image-size', '300']) };
+}
+
+test('SINGLE FORM: one recorded order for everyone, exact approved wording, participant-chosen codes, nothing issued', () => {
+  const { out, r } = singleFormStudy('single');
+  assert.equal(r.code, 0, r.err);
+  const plan = readJson(join(out, 'build-plan.json'));
+  const mapping = readJson(join(out, 'mapping.json'));
+  assert.equal(plan.variants.length, 1);
+  assert.equal(plan.variants[0].formTitle, 'Visual Composition Rating Study', 'the approved title, with no form letter');
+  assert.equal(JSON.stringify(plan.presentation), JSON.stringify({ design: 'single-fixed-order', forms: 1, orderIsPerParticipant: false, pairMembersAdjacent: false }));
+  assert.equal(plan.codeMode, 'participant-chosen');
+  assert.ok(!existsSync(join(out, 'issued-codes.csv')), 'no codes are issued');
+  const re = new RegExp(plan.codePattern);
+  for (const ok of ['abc123', 'ABCDEFGHJKLM', 'x1y2z3']) assert.match(ok, re);
+  for (const bad of ['abc12', 'abcdefghijklm', 'abc 123', 'abc-123', '']) assert.doesNotMatch(bad, re);
+  const s = mapping.variants[0].sections;
+  s.forEach((sec, i) => {
+    assert.equal(sec.orderTitle, `[${String(i + 1).padStart(2, '0')}] How ordered does this composition appear?`);
+    assert.equal(sec.appealTitle, `[${String(i + 1).padStart(2, '0')}] How visually appealing do you find this composition?`);
+    assert.notEqual(sec.pairId, s[(i + 1) % s.length].pairId, 'pair members never adjacent');
+  });
+});
+
+test('SINGLE FORM: unfilled placeholders in approved wording are refused', () => {
+  const { r } = singleFormStudy('placeholder', { participantInformation: 'Responses are retained for [approved duration].' });
+  assert.equal(r.code, 2);
+  assert.match(r.err, /participantInformation still contains a placeholder: \[approved duration\]/);
+});
+
+test('SINGLE FORM: the builder makes one closed form with the chosen-code pattern, and verification checks consent routing and texts', () => {
+  const { out, r } = singleFormStudy('single-builder');
+  assert.equal(r.code, 0, r.err);
+  const g = fakeGoogle();
+  const src = [readFileSync(join(BUILDER_DIR, 'FormsBuilder.gs'), 'utf8')]
+    .concat(readdirSync(join(out, 'apps-script')).sort().map((f) => readFileSync(join(out, 'apps-script', f), 'utf8'))).join('\n;\n');
+  const ctx = vm.createContext({ console, JSON, Math, Object, Array, String, Number, Error, Date, ...g.globals });
+  vm.runInContext(src, ctx);
+  const record = ctx.buildRatingForms();
+  assert.equal(g.forms.length, 1);
+  assert.equal(g.forms[0].s.accepting, false, 'built closed');
+  assert.equal(record.forms[0].prefilledCodeTemplate, null, 'no prefilled code link for participant-chosen codes');
+  const code = g.forms[0].items[2];
+  assert.equal(code.validation.pattern, '^[A-Za-z0-9]{6,12}$');
+  assert.equal(code.validation.help, 'Use 6-12 letters or digits.');
+  assert.equal(ctx.verifyRatingForms().length, 0);
+  g.forms[0].items[0].choices[1].nav = 'CONTINUE';
+  assert.ok(ctx.verifyRatingForms().some((p) => /routing differs/.test(p)), 'declining that no longer submits is caught');
+  g.forms[0].items[0].choices[1].nav = 'SUBMIT';
+  g.forms[0].description = 'edited';
+  assert.ok(ctx.verifyRatingForms().some((p) => /participant information differs/.test(p)));
+});
+
+test('SINGLE FORM: export accepts un-issued chosen codes, flags duplicates for review without excluding, and matches withdrawals case-insensitively', () => {
+  const { studyC, out, r } = singleFormStudy('single-export');
+  assert.equal(r.code, 0, r.err);
+  const plan = readJson(join(out, 'build-plan.json'));
+  const mapping = readJson(join(out, 'mapping.json'));
+  const key = readJson(join(studyC, 'stimulus-key.json'));
+  const secs = mapping.variants[0].sections;
+  const ratingFor = (id) => (key.items.findIndex((it) => it.stimulusId === id) % 7) + 1;
+  const full = (code) => ['t', plan.texts.agreeChoice, code, ...secs.flatMap((sc) => [ratingFor(sc.stimulusId), 8 - ratingFor(sc.stimulusId)])];
+  const csv = responseCsv(plan, 'A', [
+    ['t', plan.texts.declineChoice, '', ...secs.flatMap(() => ['', ''])],
+    full('river42x'),
+    full('RIVER42X'),
+    full('lamp7788'),
+    full('Quiet991'),
+    full('no'),
+  ]);
+  const dir = join(work, 'single-export-in'); mkdirSync(dir);
+  writeFileSync(join(dir, 'responses.csv'), csv);
+  writeFileSync(join(dir, 'withdrawn.txt'), 'QUIET991\n');
+  const refused = run('scripts/forms/export-analysis.mjs', ['--private-dir', studyC, '--build', out, '--responses', join(dir, 'responses.csv'), '--issued-codes', join(dir, 'withdrawn.txt'), '--out', join(work, 'single-export-x')]);
+  assert.equal(refused.code, 2);
+  assert.match(refused.err, /participant-chosen codes/);
+  const outDir = join(work, 'single-export-out');
+  const e = run('scripts/forms/export-analysis.mjs', ['--private-dir', studyC, '--build', out, '--responses', join(dir, 'responses.csv'), '--withdrawn-codes', join(dir, 'withdrawn.txt'), '--out', outDir]);
+  assert.equal(e.code, 0, e.err);
+  const summary = readJson(join(outDir, 'summary.json'));
+  assert.equal(summary.codeMode, 'participant-chosen');
+  assert.equal(summary.exclusionTallies['E1-declined'], 1);
+  assert.equal(summary.exclusionTallies['E2-invalid-code'], 1);
+  assert.equal(summary.exclusionTallies['E3-unissued-code'], undefined, 'chosen codes are never "unissued"');
+  assert.equal(summary.exclusionTallies['E4-duplicate-code'], undefined, 'duplicates are not excluded');
+  assert.equal(summary.exclusionTallies['E5-withdrawn'], 1, 'withdrawal matched regardless of case');
+  assert.equal(summary.reviewFlagTallies['R1-duplicate-code-review'], 2, 'both uses of the shared code are flagged');
+  const lines = readFileSync(join(outDir, 'ratings-long.csv'), 'utf8').trim().split('\n');
+  const cols = lines[0].split(',');
+  const rows = lines.slice(1).map((l) => Object.fromEntries(l.split(',').map((v, i) => [cols[i], v])));
+  const lamp = rows.filter((x) => x.studyCode === 'lamp7788');
+  assert.equal(lamp.length, secs.length);
+  for (const row of lamp) {
+    assert.equal(row.ratingEligible, 'true');
+    assert.equal(Number(row.perceivedOrder), ratingFor(row.stimulusId), 'joined by stimulus identity');
+    assert.equal(Number(row.v1Total), key.items.find((it) => it.stimulusId === row.stimulusId).v1.total);
+  }
+  const shared = rows.filter((x) => /^river42x$/i.test(x.studyCode));
+  assert.equal(shared.length, 2 * secs.length);
+  assert.ok(shared.every((x) => x.ratingEligible === 'true' && x.reviewFlags === 'R1-duplicate-code-review'));
 });

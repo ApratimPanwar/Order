@@ -10,7 +10,8 @@
  * Each form:
  *   page 1   participant information (form description) + required consent choice;
  *            declining submits immediately with no ratings
- *   page 2   required study code, validated against the issued-code pattern
+ *   page 2   required study code, validated against the plan's pattern (issued
+ *            XXXX-XXXX codes, or participant-chosen 6-12 letters or digits)
  *   page 3+  one composition per page: the image, then required 1-7 scales for
  *            perceived order and visual appeal
  *
@@ -25,7 +26,12 @@
  *   closeRatingForms()    any time
  */
 
-var BUILDER_VERSION = 'forms-builder-1';
+var BUILDER_VERSION = 'forms-builder-2';
+
+/** Publication state (newer Forms accounts); null where this Apps Script runtime lacks the call. */
+function publishedState_(form) {
+  try { return typeof form.isPublished === 'function' ? form.isPublished() : null; } catch (e) { return null; }
+}
 
 function hexBytes_(bytes) {
   return bytes.map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
@@ -115,7 +121,7 @@ function buildOneForm_(plan, images, variant, spreadsheetId) {
     .setTitle(plan.texts.codeQuestion)
     .setHelpText(plan.texts.codeHelp)
     .setRequired(true)
-    .setValidation(FormApp.createTextValidation().setHelpText('Format: XXXX-XXXX').requireTextMatchesPattern(plan.codePattern).build());
+    .setValidation(FormApp.createTextValidation().setHelpText(plan.texts.codeValidationHelp || 'Format: XXXX-XXXX').requireTextMatchesPattern(plan.codePattern).build());
 
   var sections = variant.sections.map(function (s) {
     var page = form.addPageBreakItem().setTitle(s.sectionTitle).setHelpText(plan.questions.sectionHelp);
@@ -135,11 +141,12 @@ function buildOneForm_(plan, images, variant, spreadsheetId) {
   });
 
   form.setDestination(FormApp.DestinationType.SPREADSHEET, spreadsheetId);
-  form.setAcceptingResponses(false);
+  // An unpublished form cannot take responses at all; closing it may then be refused.
+  try { form.setAcceptingResponses(false); } catch (e) { if (publishedState_(form) !== false) throw e; }
 
   // A prefilled-link template for the study code: replace 0000-0000 per participant.
   var prefill = null;
-  try {
+  if (plan.codeMode !== 'participant-chosen') try {
     prefill = form.createResponse().withItemResponse(code.createResponse('0000-0000')).toPrefilledUrl();
   } catch (e) { prefill = 'unavailable: ' + (e && e.message || e); }
 
@@ -154,7 +161,8 @@ function buildOneForm_(plan, images, variant, spreadsheetId) {
     codeItemId: code.getId(),
     sections: sections,
     settings: settings,
-    acceptingResponses: form.isAcceptingResponses(),
+    acceptingResponses: (function () { try { return form.isAcceptingResponses(); } catch (e) { return publishedState_(form) === false ? false : null; } })(),
+    published: publishedState_(form),
   };
 }
 
@@ -198,7 +206,8 @@ function buildRatingForms() {
   record.forms.forEach(function (f) {
     Object.keys(f.settings).forEach(function (k) {
       var s = f.settings[k];
-      if (!s.ok && !(s.unsupported && TOLERATED_UNSUPPORTED_[k] && s.requested === false)) {
+      var closedByUnpublished = k === 'acceptingResponses' && s.unsupported && f.published === false;
+      if (!s.ok && !closedByUnpublished && !(s.unsupported && TOLERATED_UNSUPPORTED_[k] && s.requested === false)) {
         settingProblems.push('form ' + f.variant + ': ' + k + ' requested ' + s.requested + ', read back ' + s.readBack + (s.unsupported ? ' (' + s.unsupported + ')' : ''));
       }
     });
@@ -238,6 +247,29 @@ function verifyRatingForms() {
       var sc = i.asScaleItem();
       if (sc.getLowerBound() !== 1 || sc.getUpperBound() !== 7 || !sc.isRequired()) problems.push(bf.variant + ': ' + sc.getTitle() + ' is not a required 1-7 scale');
     });
+    if (form.getTitle() !== v.formTitle) problems.push(bf.variant + ': title differs from the plan');
+    if (form.getDescription() !== plan.texts.participantInformation) problems.push(bf.variant + ': participant information differs from the plan');
+    if (form.getConfirmationMessage() !== plan.texts.confirmationMessage) problems.push(bf.variant + ': confirmation message differs from the plan');
+    var consent = items.filter(function (i) { return i.getType() === FormApp.ItemType.MULTIPLE_CHOICE; });
+    if (consent.length !== 1 || items[0] !== consent[0]) problems.push(bf.variant + ': the consent question is not the first and only choice question');
+    else {
+      var mc = consent[0].asMultipleChoiceItem();
+      var ch = mc.getChoices().map(function (c) { return c.getValue() + '->' + c.getPageNavigationType(); });
+      var want = [plan.texts.agreeChoice + '->' + FormApp.PageNavigationType.CONTINUE, plan.texts.declineChoice + '->' + FormApp.PageNavigationType.SUBMIT];
+      if (mc.getTitle() !== plan.texts.consentQuestion || !mc.isRequired() || ch.join('|') !== want.join('|')) problems.push(bf.variant + ': consent question, requirement or routing differs from the plan');
+    }
+    var texts = items.filter(function (i) { return i.getType() === FormApp.ItemType.TEXT; });
+    if (texts.length !== 1 || texts[0].getTitle() !== plan.texts.codeQuestion || !texts[0].asTextItem().isRequired()) problems.push(bf.variant + ': study-code question differs from the plan');
+    // Image bytes as Google stores them, in page order. A byte mismatch is reported
+    // separately: Google may re-encode, so the respondent view is then compared by eye.
+    var stored = images.map(function (i) { try { return sha256Bytes_(i.asImageItem().getImage().getBytes()); } catch (e) { return 'unreadable'; } });
+    var imageBytes = { identical: 0, differs: [] };
+    v.sections.forEach(function (s, idx) {
+      var planned = plan.images.filter(function (im) { return im.imageKey === s.imageKey; })[0];
+      if (stored[idx] === planned.pngSha256) imageBytes.identical++; else imageBytes.differs.push(s.position);
+    });
+    Logger.log(bf.variant + ' stored image bytes: ' + JSON.stringify({ identical: imageBytes.identical, differsAtPositions: imageBytes.differs }));
+    Logger.log(bf.variant + ' state: ' + JSON.stringify({ published: publishedState_(form), acceptingResponses: form.isAcceptingResponses(), publishedUrl: form.getPublishedUrl() }));
     if (form.isQuiz()) problems.push(bf.variant + ': is a quiz (grading on)');
     if (form.collectsEmail()) problems.push(bf.variant + ': collects email');
     if (form.isPublishingSummary()) problems.push(bf.variant + ': publishes a response summary');
@@ -259,7 +291,12 @@ function openRatingForms() {
   }
   var problems = verifyRatingForms();
   if (problems.length) throw new Error('refusing to open: forms do not match the plan');
-  JSON.parse(props.getProperty('BUILD_RECORD')).forms.forEach(function (bf) { FormApp.openById(bf.formId).setAcceptingResponses(true); });
+  JSON.parse(props.getProperty('BUILD_RECORD')).forms.forEach(function (bf) {
+    var form = FormApp.openById(bf.formId);
+    if (typeof form.setPublished === 'function' && publishedState_(form) === false) form.setPublished(true);
+    form.setAcceptingResponses(true);
+    if (publishedState_(form) === false || !form.isAcceptingResponses()) throw new Error('form ' + bf.variant + ' did not open (published ' + publishedState_(form) + ', accepting ' + form.isAcceptingResponses() + ')');
+  });
   Logger.log('opened ' + plan.variants.length + ' forms for plan ' + plan.planDigest);
 }
 

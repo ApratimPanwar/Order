@@ -14,9 +14,19 @@
  *   <build>/images/img-XXXXXXXX.png    one PNG per stimulus, opaque name, no metadata
  *   <build>/build-plan.json            everything the builder needs + digests (no scores)
  *   <build>/mapping.json               variant/position/question title -> stimulus ID
- *   <build>/issued-codes.csv           study codes and their variant assignment
+ *   <build>/issued-codes.csv           study codes and their variant assignment (issued-code mode only)
  *   <build>/apps-script/BuildPlan.gs   the plan for the Apps Script builder (no stimulus IDs)
  *   <build>/apps-script/StimulusImages_NN.gs  base64 PNGs keyed by opaque image key
+ *
+ * STUDY CODES
+ *   issued               the researcher issues XXXX-XXXX codes, assigned to forms round-robin
+ *   participant-chosen   (formsApproval.codeMode) participants make up 6-12 letters or digits;
+ *                        nothing is issued and no issued-codes.csv is written
+ *
+ * PRESENTATION
+ *   --variants 1         one form, one recorded shuffled order, identical for every participant
+ *   --variants K > 1     K forms, the recorded order rotated by k * n / K
+ *   Either way, no two members of a matched pair are adjacent.
  *
  * The Apps Script project receives image keys, titles, texts and settings, but
  * never stimulus IDs, pairing, strata or scores. The join back to stimuli and
@@ -98,6 +108,13 @@ const DEFAULT_SETTINGS = Object.freeze({
 let texts;
 let settings = { ...DEFAULT_SETTINGS };
 let approvalRecord = null;
+let codeMode = 'issued';
+let questionTexts = {
+  orderQuestion: 'How ordered does this composition appear?',
+  appealQuestion: 'How visually appealing do you find it?',
+  orderLow: 'Not at all ordered', orderHigh: 'Highly ordered',
+  appealLow: 'Not at all appealing', appealHigh: 'Very appealing',
+};
 
 if (MODE === 'study') {
   if (key.purpose !== 'study' || key.planStatus !== 'approved') fail('study mode requires a corpus built from an approved study plan');
@@ -118,6 +135,15 @@ if (MODE === 'study') {
   for (const k of ['formTitle', 'participantInformation', 'consentQuestion', 'agreeChoice', 'declineChoice', 'codeQuestion', 'confirmationMessage']) {
     if (typeof fa[k] !== 'string' || !fa[k].trim()) problems.push(`formsApproval.${k} is missing`);
   }
+  if (fa.codeMode !== undefined && !['issued', 'participant-chosen'].includes(fa.codeMode)) problems.push('formsApproval.codeMode must be issued or participant-chosen');
+  if (fa.codeMode === 'participant-chosen' && CODES !== 0 && flag('codes') !== null) problems.push('participant-chosen codes: do not pass --codes');
+  for (const k of ['orderQuestion', 'appealQuestion', 'orderLow', 'orderHigh', 'appealLow', 'appealHigh', 'codeHelp', 'codeValidationHelp']) {
+    if (fa[k] !== undefined && (typeof fa[k] !== 'string' || !fa[k].trim())) problems.push(`formsApproval.${k} must be non-empty text when given`);
+  }
+  // Unfilled drafting placeholders such as "[approved duration]" must never reach participants.
+  for (const [k, v] of Object.entries(fa)) {
+    if (typeof v === 'string' && /\[[^\]]*\]/.test(v)) problems.push(`formsApproval.${k} still contains a placeholder: ${v.match(/\[[^\]]*\]/)[0]}`);
+  }
   if (fa.variants !== VARIANTS) problems.push(`formsApproval.variants (${fa.variants}) must equal --variants (${VARIANTS})`);
   const overrides = fa.settingsOverrides ?? {};
   for (const [k, v] of Object.entries(overrides)) {
@@ -131,6 +157,8 @@ if (MODE === 'study') {
     process.exit(2);
   }
   settings = { ...DEFAULT_SETTINGS, ...overrides };
+  codeMode = fa.codeMode ?? 'issued';
+  for (const k of Object.keys(questionTexts)) if (fa[k]) questionTexts[k] = fa[k];
   texts = {
     formTitle: fa.formTitle,
     participantInformation: fa.participantInformation,
@@ -138,7 +166,8 @@ if (MODE === 'study') {
     agreeChoice: fa.agreeChoice,
     declineChoice: fa.declineChoice,
     codeQuestion: fa.codeQuestion,
-    codeHelp: fa.codeHelp ?? 'Enter the code exactly as you received it.',
+    codeHelp: fa.codeHelp ?? (codeMode === 'issued' ? 'Enter the code exactly as you received it.' : 'Make up a code using 6-12 letters or digits.'),
+    codeValidationHelp: fa.codeValidationHelp ?? (codeMode === 'issued' ? 'Format: XXXX-XXXX' : 'Use 6-12 letters or digits, with no spaces.'),
     confirmationMessage: fa.confirmationMessage,
   };
   approvalRecord = { approvedBy: ap.approvedBy, specFreezeId: ap.specFreezeId, ethicsReviewStatus: ap.ethicsReviewStatus, approvalsDigest: sha256(readFileSync(apPath)) };
@@ -154,6 +183,7 @@ if (MODE === 'study') {
     declineChoice: 'Stop',
     codeQuestion: 'Study code',
     codeHelp: 'Enter a rehearsal code from issued-codes.csv (format XXXX-XXXX).',
+    codeValidationHelp: 'Format: XXXX-XXXX',
     confirmationMessage: 'Rehearsal response recorded. This was a software test, not a study.',
   };
 }
@@ -198,16 +228,19 @@ const variants = Array.from({ length: VARIANTS }, (_, k) => {
   return {
     variant: letter,
     rotation: shift,
-    formTitle: `${texts.formTitle} (form ${letter})`,
+    formTitle: VARIANTS === 1 ? texts.formTitle : `${texts.formTitle} (form ${letter})`,
     sections: order.map((stimulusId, idx) => {
+      // A neutral position tag keeps every response column unique and lets the
+      // exporter identify the form by its header row.
       const pos = String(idx + 1).padStart(2, '0');
+      const tag = VARIANTS === 1 ? `[${pos}]` : `[${letter}-${pos}]`;
       return {
         position: idx + 1,
         stimulusId,
         imageKey: imageKeyOf.get(stimulusId),
         sectionTitle: `Composition ${idx + 1} of ${n}`,
-        orderTitle: `[${letter}-${pos}] How ordered does this composition appear?`,
-        appealTitle: `[${letter}-${pos}] How visually appealing do you find it?`,
+        orderTitle: `${tag} ${questionTexts.orderQuestion}`,
+        appealTitle: `${tag} ${questionTexts.appealQuestion}`,
       };
     }),
   };
@@ -215,9 +248,9 @@ const variants = Array.from({ length: VARIANTS }, (_, k) => {
 
 // --- 5. study codes -------------------------------------------------------------------------------
 const CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';   // Crockford base32: no I, L, O, U
-const CODE_PATTERN = '^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$';
+const CODE_PATTERN = codeMode === 'issued' ? '^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$' : '^[A-Za-z0-9]{6,12}$';
 const codes = new Set();
-while (codes.size < CODES) {
+while (codeMode === 'issued' && codes.size < CODES) {
   const b = randomBytes(8);
   const s = [...b].map((x) => CODE_ALPHABET[x % 32]).join('');
   codes.add(`${s.slice(0, 4)}-${s.slice(4)}`);
@@ -226,8 +259,8 @@ const issued = [...codes].map((code, i) => ({ code, variant: LETTERS[i % VARIANT
 
 // --- 6. the plan (no scores, no pairing, no strata) ---------------------------------------------------
 const QUESTIONS = {
-  orderLow: 'Not at all ordered', orderHigh: 'Highly ordered',
-  appealLow: 'Not at all appealing', appealHigh: 'Very appealing',
+  orderLow: questionTexts.orderLow, orderHigh: questionTexts.orderHigh,
+  appealLow: questionTexts.appealLow, appealHigh: questionTexts.appealHigh,
   sectionHelp: 'Look at the composition, then answer both questions.',
   instructionsVersion: 'forms-instructions-1',
 };
@@ -241,7 +274,14 @@ const buildPlan = {
   settings,
   texts,
   questions: QUESTIONS,
+  codeMode,
   codePattern: CODE_PATTERN,
+  presentation: {
+    design: VARIANTS === 1 ? 'single-fixed-order' : 'rotated-order-variants',
+    forms: VARIANTS,
+    orderIsPerParticipant: false,
+    pairMembersAdjacent: false,
+  },
   images: images.map(({ imageKey, pngSha256, pngBytes }) => ({ imageKey, pngSha256, pngBytes })).sort((a, b) => (a.imageKey < b.imageKey ? -1 : 1)),
   variants: variants.map((v) => ({
     variant: v.variant, formTitle: v.formTitle, rotation: v.rotation,
@@ -268,7 +308,7 @@ const mapping = {
 
 writeFileSync(join(OUT, 'build-plan.json'), JSON.stringify(buildPlan, null, 2));
 writeFileSync(join(OUT, 'mapping.json'), JSON.stringify(mapping, null, 2));
-writeFileSync(join(OUT, 'issued-codes.csv'), `code,variant\n${issued.map((r) => `${r.code},${r.variant}`).join('\n')}\n`);
+if (codeMode === 'issued') writeFileSync(join(OUT, 'issued-codes.csv'), `code,variant\n${issued.map((r) => `${r.code},${r.variant}`).join('\n')}\n`);
 
 writeFileSync(join(OUT, 'apps-script', 'BuildPlan.gs'),
   `/** GENERATED by prepare-forms-build.mjs. Private. Contains no stimulus IDs or scores. */\nvar BUILD_PLAN = ${JSON.stringify(buildPlan, null, 2)};\n`);
@@ -295,6 +335,6 @@ console.log(`prepared ${MODE} forms build`);
 console.log(`  plan digest   ${buildPlan.planDigest}`);
 console.log(`  stimuli       ${n} images at ${IMAGE_SIZE}px (${RASTERIZER_VERSION})`);
 console.log(`  variants      ${VARIANTS} (${variants.map((v) => `${v.variant}+${v.rotation}`).join(', ')})`);
-console.log(`  study codes   ${issued.length}`);
+console.log(codeMode === 'issued' ? `  study codes   ${issued.length} issued` : '  study codes   chosen by participants (none issued)');
 console.log(`  data files    ${chunkIndex - 1} StimulusImages_NN.gs`);
 console.log('  every output is private; nothing here may be committed, uploaded publicly or attached');

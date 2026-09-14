@@ -29,6 +29,13 @@
  *   E6-invalid-rating    a rating is not an integer 1..7
  *   E7-wrong-form        code was issued for a different form variant
  *   X3-development-rehearsal  the build is a rehearsal: excluded from the study dataset
+ *
+ * Participant-chosen codes (plan.codeMode === 'participant-chosen'):
+ *   codes are compared case-insensitively; nothing is "unissued" (E3, E7 never apply);
+ *   a code used by more than one consenting response is NOT excluded: every occurrence
+ *   carries the review flag R1-duplicate-code-review (reviewFlags column), because two
+ *   people may choose the same code. A withdrawn code that is duplicated marks every
+ *   occurrence E5-withdrawn and R1 so the researcher resolves it by hand.
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
@@ -84,6 +91,9 @@ if (buildRecordPath) {
 const keyById = new Map(key.items.map((it) => [it.stimulusId, it]));
 for (const v of mapping.variants) for (const s of v.sections) if (!keyById.has(s.stimulusId)) fail(`mapping names ${s.stimulusId}, which is not in the frozen key`, 3);
 
+const participantChosen = plan.codeMode === 'participant-chosen';
+const norm = (c) => (participantChosen ? String(c).trim().toUpperCase() : String(c).trim());
+if (participantChosen && one('issued-codes')) fail('this survey uses participant-chosen codes; there is no issued-code list to check');
 const issued = new Map();
 if (one('issued-codes')) {
   readFileSync(resolve(one('issued-codes')), 'utf8').trim().split(/\r?\n/).slice(1).forEach((line) => {
@@ -92,7 +102,7 @@ if (one('issued-codes')) {
   });
 }
 const withdrawn = new Set(one('withdrawn-codes')
-  ? readFileSync(resolve(one('withdrawn-codes')), 'utf8').split(/\r?\n/).map((x) => x.trim()).filter(Boolean) : []);
+  ? readFileSync(resolve(one('withdrawn-codes')), 'utf8').split(/\r?\n/).map((x) => norm(x)).filter(Boolean) : []);
 
 // --- CSV ------------------------------------------------------------------------------------------
 function parseCsv(text) {
@@ -142,12 +152,15 @@ for (const file of RESPONSES) {
 const occurrences = new Map();
 responses.forEach((r) => {
   if (r.consent !== plan.texts.agreeChoice) return;
-  if (!occurrences.has(r.code)) occurrences.set(r.code, []);
-  occurrences.get(r.code).push(r);
+  const c = norm(r.code);
+  if (!occurrences.has(c)) occurrences.set(c, []);
+  occurrences.get(c).push(r);
 });
 const duplicate = new Set();
+const reviewDuplicate = new Set();
 for (const list of occurrences.values()) {
   if (list.length < 2) continue;
+  if (participantChosen) { list.forEach((x) => reviewDuplicate.add(x)); continue; }
   if (new Set(list.map((x) => x.fileSha)).size > 1) list.forEach((x) => duplicate.add(x));
   else list.slice(1).forEach((x) => duplicate.add(x));
 }
@@ -156,16 +169,20 @@ const ordered = responses.map((r) => ({ r }));
 const out = [];
 const tallies = {};
 const tally = (k) => { tallies[k] = (tallies[k] || 0) + 1; };
+const reviewTallies = {};
 for (const { r } of ordered) {
   const rules = [];
+  const review = [];
   if (r.consent !== plan.texts.agreeChoice) rules.push('E1-declined');
   if (!rules.includes('E1-declined')) {
     if (!codeRe.test(r.code)) rules.push('E2-invalid-code');
     if (issued.size && !issued.has(r.code)) rules.push('E3-unissued-code');
     if (issued.size && issued.has(r.code) && issued.get(r.code) !== r.variant) rules.push('E7-wrong-form');
     if (duplicate.has(r)) rules.push('E4-duplicate-code');
-    if (withdrawn.has(r.code)) rules.push('E5-withdrawn');
+    if (withdrawn.has(norm(r.code))) rules.push('E5-withdrawn');
+    if (reviewDuplicate.has(r)) review.push('R1-duplicate-code-review');
   }
+  review.forEach((k) => { reviewTallies[k] = (reviewTallies[k] || 0) + 1; });
   if (plan.dataClass !== 'study-data') rules.push('X3-development-rehearsal');
   rules.forEach(tally);
 
@@ -200,6 +217,7 @@ for (const { r } of ordered) {
       ratingEligible,
       modelAgreementEligible: ratingEligible && k1.scoreAvailable === true,
       exclusionRules: rowRules.join('|'),
+      reviewFlags: review.join('|'),
     });
   });
 }
@@ -221,7 +239,11 @@ const summary = {
   ratingEligibleRows: out.filter((r) => r.ratingEligible).length,
   modelAgreementEligibleRows: out.filter((r) => r.modelAgreementEligible).length,
   exclusionTallies: tallies,
-  duplicateRule: 'first row within a tab kept; codes spanning tabs flagged in every occurrence',
+  reviewFlagTallies: reviewTallies,
+  codeMode: participantChosen ? 'participant-chosen' : 'issued',
+  duplicateRule: participantChosen
+    ? 'participant-chosen codes: duplicates are flagged R1-duplicate-code-review in every occurrence and not excluded'
+    : 'first row within a tab kept; codes spanning tabs flagged in every occurrence',
   issuedCodesChecked: issued.size > 0,
   withdrawalListChecked: one('withdrawn-codes') !== null,
   note: plan.dataClass === 'study-data' ? 'study data' : 'REHEARSAL: every row is excluded from the study dataset',
@@ -230,4 +252,5 @@ writeFileSync(join(OUT, 'summary.json'), JSON.stringify(summary, null, 2));
 console.log(`exported ${out.length} rating rows from ${responses.length} responses (${fileReports.length} form tab(s))`);
 console.log(`  rating-eligible ${summary.ratingEligibleRows}, model-agreement-eligible ${summary.modelAgreementEligibleRows}`);
 console.log(`  exclusions ${JSON.stringify(tallies)}`);
+if (Object.keys(reviewTallies).length) console.log(`  review flags (not exclusions) ${JSON.stringify(reviewTallies)}`);
 if (!summary.withdrawalListChecked) console.log('  NOTE: no --withdrawn-codes list supplied; withdrawals were not checked');

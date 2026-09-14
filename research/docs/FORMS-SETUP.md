@@ -1,8 +1,13 @@
 # Google Forms rating survey — setup
 
-**Status: PREPARED, NOT DEPLOYED.** Nothing in this document has been run against
-Google. No approvals are recorded. Do not build study forms, open any form or
-invite anyone until the investigator authorises it.
+**Study configuration (investigator decision, 2026-09-14):** ONE form titled
+"Visual Composition Rating Study", one shuffled order recorded privately and
+shown identically to every participant (`--variants 1`), participant-chosen study
+codes (`codeMode: participant-chosen`), no background questions. This departs
+from the earlier plan of a per-participant random order and from the 4-variant
+counterbalanced forms described below; presentation order must not be described
+as randomized per participant. The multi-variant and issued-code paths remain in
+the code for completeness.
 
 This replaces the participant download/upload workflow. Participants no longer
 handle research files: they open a form, consent, enter a study code and rate each
@@ -38,13 +43,14 @@ Each form, identical except for presentation order:
    form description. A required choice: *agree* continues; *decline* submits
    immediately with no ratings. Google records that declining submission
    (timestamp and choice only); the exporter excludes it (`E1-declined`).
-2. **Study code.** Required, validated against `XXXX-XXXX` (Crockford base32:
-   no I, L, O, U).
+2. **Study code.** Required. Issued-code mode: validated against `XXXX-XXXX`
+   (Crockford base32). Participant-chosen mode (the study): 6–12 letters or
+   digits the participant makes up and keeps; nothing is issued.
 3. **One composition per page.** The image, then two required 1–7 scales:
    *How ordered does this composition appear?* (Not at all ordered … Highly ordered)
    and *How visually appealing do you find it?* (Not at all appealing … Very appealing).
 
-Question titles carry a neutral form-and-position tag, e.g. `[B-07]`, so every
+Question titles carry a neutral position tag, e.g. `[07]` (single form) or `[B-07]`, so every
 column in the response sheet is unique and each downloaded tab identifies its own
 form. Titles never contain stimulus IDs, conditions, pairs or scores.
 
@@ -171,7 +177,10 @@ Participants withdraw by contacting the researcher (the approved contact) with
 their study code.
 
 1. Add the code to a private `withdrawn-codes.txt`. The exporter then marks
-   every row for that code `E5-withdrawn`.
+   every row for that code `E5-withdrawn` (participant-chosen codes match
+   regardless of letter case). If the code is shared by more than one response,
+   every occurrence also carries `R1-duplicate-code-review`: resolve by hand,
+   never by deleting a response solely because its code is shared.
 2. If the approved policy is deletion: delete that response **both** in the form
    (Responses → Individual → delete) **and** in the response spreadsheet. The
    form keeps its own copy of responses, separate from the Sheet.
@@ -217,5 +226,10 @@ overwrites an export.
 | E6-invalid-rating | a rating is not 1–7 |
 | E7-wrong-form | code issued for a different form |
 | X3-development-rehearsal | rehearsal build; never study data |
+| R1-duplicate-code-review | participant-chosen code used by more than one consenting response. A **review flag, not an exclusion** (`reviewFlags` column) |
+
+With participant-chosen codes, E3 and E7 never apply, E4 is replaced by R1, and
+`--issued-codes` is refused. A consent decline is submitted as a consent-only
+row (timestamp and the decline choice, no code, no ratings) and excluded by E1.
 
 Timestamps in downloaded CSVs are locale-formatted and are not used for ordering.
