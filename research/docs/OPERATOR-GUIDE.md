@@ -1,3 +1,8 @@
+> **Superseded 2026-09-14 for participant collection.** Participants no longer
+> download and upload response files; collection moves to a Google Forms survey
+> (`FORMS-SETUP.md`, `FORMS-REHEARSAL-CHECKLIST.md`). This document describes the
+> earlier web-app + upload-collector workflow and is kept as a record.
+
 # Operator guide — study site, response collector, offline join
 
 Three separate places, each holding only what it must:

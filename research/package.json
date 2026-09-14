@@ -11,6 +11,10 @@
     "test:v1": "node --test test/v1.test.mjs",
     "verify:spec": "node scripts/verify-specification.mjs",
     "test:hardening": "node --test test/hardening-v2.test.mjs",
-    "build:release": "node scripts/build-release-package.mjs"
+    "build:release": "node scripts/build-release-package.mjs",
+    "test:forms": "node --test test/forms.test.mjs",
+    "forms:prepare": "node scripts/forms/prepare-forms-build.mjs",
+    "forms:check-images": "node scripts/forms/check-images.mjs",
+    "forms:export": "node scripts/forms/export-analysis.mjs"
   }
 }

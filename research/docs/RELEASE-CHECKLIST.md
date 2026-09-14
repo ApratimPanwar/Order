@@ -1,3 +1,8 @@
+> **Superseded 2026-09-14 for participant collection.** Participants no longer
+> download and upload response files; collection moves to a Google Forms survey
+> (`FORMS-SETUP.md`, `FORMS-REHEARSAL-CHECKLIST.md`). This document describes the
+> earlier web-app + upload-collector workflow and is kept as a record.
+
 # Participant-collection release checklist
 
 **Current assessment: NOT READY FOR PARTICIPANT COLLECTION.**

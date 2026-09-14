@@ -89,7 +89,7 @@ Evidence: `docs/SCORER-REVISIONS.md`.
 | Participant information text | development acknowledgement only (`study/index.html`, acknowledgement-2) | |
 | Consent text and consent mechanism | *none — current text is not research consent* | |
 | Debrief text | *none* | |
-| Upload page wording | `collector/Upload.html` | |
+| Form wording: title, participant information, consent question and choices, study-code question, confirmation message | rehearsal placeholders only | |
 | Age / capacity requirement | *not proposed* | |
 | Compensation | *not proposed* | |
 
@@ -97,20 +97,27 @@ Evidence: `docs/SCORER-REVISIONS.md`.
 
 ## 4. Data collection, storage, retention and withdrawal
 
+Collection is now a **Google Forms survey** writing to a private Google Sheet
+(`docs/FORMS-SETUP.md`). The download/upload workflow is superseded.
+
 | Field | Current state | Decision |
 |---|---|---|
-| Return channel | Google Apps Script upload page (`collector/`), receiving the unchanged JSON export | |
-| Google account that owns the script, Sheet and Drive folder | *not decided* — must be an account whose data terms the review body accepts (institutional vs personal) | |
-| Where the private Sheet and Drive folder live; who has access | created private by `operatorSetup`, owner only | |
-| Hosting/transfer metadata statement | Google and GitHub ordinarily log technical data incl. IP address; stated to participants, not claimed absent | |
-| Whether names or email addresses are collected | not collected (protocol may require otherwise) | |
-| Retention period for raw files, sheet rows, upload ledger | *not proposed* | |
+| Google account that owns the forms, response Sheet and Drive folder | *not decided* — must be acceptable to the review body (institutional vs personal) | |
+| Access granted to the builder | `forms` (all Forms in the account) and `drive.file` (only files it creates) | |
+| If Google requires it at build: `spreadsheets` (all Sheets in the account) | *not approved* | |
+| Number of order variants (forms) | 4 proposed | |
+| Study-code issuing and form assignment | codes `XXXX-XXXX`, round-robin across forms, optional prefilled links | |
+| Form settings | quiz/grading, score feedback, response summary, email collection, sign-in requirement, one-response limit, response edits: **all off** | |
+| Any setting to turn on (list explicitly) | *none* | |
+| Hosting metadata statement | Google ordinarily logs technical data incl. IP address; stated to participants, not claimed absent | |
+| Names or email addresses collected | not collected (protocol may require otherwise) | |
+| Retention period for form responses, Sheet and exports | *not proposed* | |
 | Deletion procedure at end of retention | *not proposed* | |
-| Withdrawal policy after upload | `mark-ineligible` (rows kept for audit) — alternative `delete` | |
-| Withdrawal deadline (e.g. until analysis / publication) | *not proposed* | |
-| Withdrawal contact shown to participants (`CONTACT_TEXT`) | *not set — pages say none is configured* | |
-| Who processes withdrawal requests, and how often | *not proposed* | |
-| Backup of the private key directory | *not arranged* | |
+| Withdrawal policy | exclude (`E5-withdrawn`) or delete from form **and** Sheet | |
+| Withdrawal deadline | *not proposed* | |
+| Withdrawal contact shown to participants | *not set* | |
+| Who processes withdrawals, and how often | *not proposed* | |
+| Backup of the private corpus and build directories | *not arranged* | |
 | Data-protection basis / institutional registration | *not proposed* | |
 
 ---
@@ -137,11 +144,11 @@ Evidence: `docs/SCORER-REVISIONS.md`.
 
 ---
 
-## `approvals.json` (private directory) — what the release builder requires
+## `approvals.json` (private corpus directory) — what the Forms build requires
 
 ```json
 {
-  "approvalFormat": "investigator-approval-1",
+  "approvalFormat": "investigator-approval-2",
   "approvedBy": "<name, role>",
   "specFreezeId": "<identifier>",
   "ethicsReviewStatus": "<body, status, reference>",
@@ -150,14 +157,24 @@ Evidence: `docs/SCORER-REVISIONS.md`.
   "protocolApproved": true,
   "participantWordingApproved": true,
   "collectionProcedureApproved": true,
-  "returnChannel": {
-    "kind": "upload-page",
-    "instructions": "<exact participant-facing text>",
-    "url": "https://script.google.com/macros/s/<deployment id>/exec"
+  "corpusApproved": true,
+  "formsApproval": {
+    "formTitle": "<exact text>",
+    "participantInformation": "<exact text>",
+    "consentQuestion": "<exact text>",
+    "agreeChoice": "<exact text>",
+    "declineChoice": "<exact text>",
+    "codeQuestion": "<exact text>",
+    "codeHelp": "<exact text>",
+    "confirmationMessage": "<exact text>",
+    "variants": 4,
+    "settingsOverrides": {}
   }
 }
 ```
 
-The builder refuses a participant package if any S item is missing or
-`pending`, any sign-off is not `true`, or the return channel lacks a kind and
-instructions. It never creates this file.
+`prepare-forms-build.mjs --mode study` refuses unless the corpus was built from a
+plan with `"purpose": "study"` and `"status": "approved"`, every S and R2 item is
+decided, all four sign-offs are `true`, every Forms text is present, `variants`
+matches, and every override is a known boolean setting. It never builds forms
+open, and it never creates this file.

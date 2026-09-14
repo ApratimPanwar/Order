@@ -1,3 +1,8 @@
+> **Superseded 2026-09-14 for participant collection.** Participants no longer
+> download and upload response files; collection moves to a Google Forms survey
+> (`FORMS-SETUP.md`, `FORMS-REHEARSAL-CHECKLIST.md`). This document describes the
+> earlier web-app + upload-collector workflow and is kept as a record.
+
 # Local end-to-end rehearsal — 2026-09-14
 
 **Not a live-site acceptance run.** Chromium (the Claude desktop in-app
